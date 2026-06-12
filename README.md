@@ -1,5 +1,7 @@
 ## Project Structure
-mdkli/
+
+```
+```mdkli/
 ├── .github/
 │ └── workflows/
 │ ├── build-backend.yml # CI for all backend services
@@ -49,8 +51,7 @@ mdkli/
 │
 ├── deploy/
 │ ├── docker-compose/ # Local dev
-│ │ ├── docker-compose.yml # Everything + DBs + Redis + MinIO
-│ │ └── .env.example
+│ │ ├── docker-compose.yml # Everything + DBs + Redis + MinIO │ │ └── .env.example
 │ │
 │ └── kubernetes/ # K8s manifests (ArgoCD sync)
 │ ├── base/ # Shared base configs (namespaces, secrets)
@@ -81,4 +82,6 @@ mdkli/
 ├── .gitignore
 ├── README.md # How to run locally + K8s setup
 └── Makefile # Common tasks (make dev, make build)
+```
+```
 [View on Eraser![](https://app.eraser.io/workspace/oHGz8eBGl64Y9LdqYTRI/preview?diagram=ItUwEJnIaBolMM5IJ2_og&type=embed)](https://app.eraser.io/workspace/oHGz8eBGl64Y9LdqYTRI?diagram=ItUwEJnIaBolMM5IJ2_og)
