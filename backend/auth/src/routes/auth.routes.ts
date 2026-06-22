@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { registerUser, loginUser, setupTOTP, verifyOTPForTOTP, changePassword } from '../controllers/auth.controller';
+import { startRegistration, completeRegistration, checkPendingRegistration } from '../controllers/registration.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { body } from 'express-validator';
 
 const router = Router();
 
+// Old registration (kept for backward compatibility)
 router.post(
   '/register',
   [
@@ -16,6 +18,30 @@ router.post(
   ],
   registerUser
 );
+
+// New delayed registration endpoints
+router.post(
+  '/register/start',
+  [
+    body('username').isString().notEmpty(),
+    body('email').isEmail(),
+    body('password').isLength({ min: 8 }),
+    body('role').isIn(['patient', 'clinic_admin', 'doctor', 'pharmacy_admin']),
+    body('profileData').isObject()
+  ],
+  startRegistration
+);
+
+router.post(
+  '/register/complete',
+  [
+    body('pendingToken').isString().notEmpty(),
+    body('onboardingData').isObject()
+  ],
+  completeRegistration
+);
+
+router.get('/register/pending/:pendingToken', checkPendingRegistration);
 
 router.post(
   '/login',

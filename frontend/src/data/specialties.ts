@@ -1,0 +1,38 @@
+export const specialties = [
+  { id: 'cardiology', name: 'Cardiology' },
+  { id: 'dermatology', name: 'Dermatology' },
+  { id: 'endocrinology', name: 'Endocrinology' },
+  { id: 'ent', name: 'ENT (Ear, Nose & Throat)' },
+  { id: 'gastroenterology', name: 'Gastroenterology' },
+  { id: 'general_medicine', name: 'General Medicine' },
+  { id: 'general_surgery', name: 'General Surgery' },
+  { id: 'gynecology', name: 'Gynecology & Obstetrics' },
+  { id: 'hematology', name: 'Hematology' },
+  { id: 'nephrology', name: 'Nephrology' },
+  { id: 'neurology', name: 'Neurology' },
+  { id: 'neurosurgery', name: 'Neurosurgery' },
+  { id: 'oncology', name: 'Oncology' },
+  { id: 'ophthalmology', name: 'Ophthalmology' },
+  { id: 'orthopedics', name: 'Orthopedics' },
+  { id: 'pediatrics', name: 'Pediatrics' },
+  { id: 'plastic_surgery', name: 'Plastic Surgery' },
+  { id: 'psychiatry', name: 'Psychiatry' },
+  { id: 'pulmonology', name: 'Pulmonology' },
+  { id: 'radiology', name: 'Radiology' },
+  { id: 'rheumatology', name: 'Rheumatology' },
+  { id: 'urology', name: 'Urology' },
+  { id: 'vascular_surgery', name: 'Vascular Surgery' },
+  { id: 'dentistry', name: 'Dentistry' },
+  { id: 'dental_surgery', name: 'Dental Surgery' },
+  { id: 'orthodontics', name: 'Orthodontics' },
+  { id: 'anesthesiology', name: 'Anesthesiology' },
+  { id: 'emergency_medicine', name: 'Emergency Medicine' },
+  { id: 'family_medicine', name: 'Family Medicine' },
+  { id: 'internal_medicine', name: 'Internal Medicine' },
+  { id: 'physical_therapy', name: 'Physical Therapy' },
+  { id: 'nutrition', name: 'Nutrition & Dietetics' },
+];
+
+export const getSpecialtyById = (id: string) => {
+  return specialties.find(s => s.id === id);
+};

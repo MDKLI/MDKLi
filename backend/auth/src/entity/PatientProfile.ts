@@ -43,8 +43,8 @@ export class PatientProfile {
   @Column({ type: 'boolean', nullable: true })
   is_pregnant: boolean;
 
-  @Column({ type: 'boolean', nullable: true })
-  is_smoker: boolean;
+  @Column({ nullable: true })
+  is_smoker: string;
 
   @Column({ type: 'boolean', nullable: true })
   has_previous_surgeries: boolean;
