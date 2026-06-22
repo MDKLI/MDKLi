@@ -10,32 +10,35 @@ export class PharmacyProfile {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ nullable: true })
   pharmacy_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   photo_url: string;
 
-  @Column()
+  @Column({ nullable: true })
   city: string;
 
-  @Column()
+  @Column({ nullable: true })
   address: string;
 
   @Column({ nullable: true })
   google_maps_url: string;
 
-  @Column('float')
+  @Column('float', { nullable: true })
   latitude: number;
 
-  @Column('float')
+  @Column('float', { nullable: true })
   longitude: number;
 
-  @Column('text', { array: true })
+  @Column('text', { array: true, nullable: true })
   phone_numbers: string[];
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ nullable: true })
+  facility_type: string;
 
   @Column({ type: 'enum', enum: ['pending', 'verified', 'suspended'], default: 'pending' })
   status: string;

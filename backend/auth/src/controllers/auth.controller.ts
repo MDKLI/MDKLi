@@ -83,18 +83,17 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
                 break;
             }
             case 'doctor': {
-                if (!profileData.clinicId) {
-                    throw new Error('clinicId is required for doctor registration');
-                }
-                const clinicRepo = queryRunner.manager.getRepository(ClinicProfile);
-                const clinic = await clinicRepo.findOneBy({ id: profileData.clinicId });
-                if (!clinic) {
-                    throw new Error('Invalid clinic ID');
-                }
                 const doctorProfile = new Doctor();
                 Object.assign(doctorProfile, profileData);
                 doctorProfile.user = user;
-                doctorProfile.clinic = clinic;
+                // Clinic is optional - doctor can join later or create private practice
+                if (profileData.clinicId) {
+                    const clinicRepo = queryRunner.manager.getRepository(ClinicProfile);
+                    const clinic = await clinicRepo.findOneBy({ id: profileData.clinicId });
+                    if (clinic) {
+                        doctorProfile.clinic = clinic;
+                    }
+                }
                 await queryRunner.manager.save(doctorProfile);
                 break;
             }

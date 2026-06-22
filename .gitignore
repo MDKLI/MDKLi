@@ -1,5 +1,7 @@
 node_modules/
-
+./backend/search-filter/
+./backend/review/
+./backend/chat/
 # Build output
 dist/
 build/
@@ -70,3 +72,6 @@ vite.svg
 
 # Generated files
 *.generated.*
+/backend/chat
+/backend/review
+/backend/search-filter

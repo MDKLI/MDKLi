@@ -12,4 +12,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Run migrations and seed, then start the server
-CMD sh -c "npm run migrate && npm run seed && npm start"
+CMD sh -c "npm run migrate && npm run seed 2>/dev/null || true && npm start"

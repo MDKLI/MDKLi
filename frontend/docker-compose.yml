@@ -1,0 +1,20 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - landing
+      - dashboard
+
+  landing:
+    build: ./home
+    expose:
+      - "3000"
+
+  dashboard:
+    build: .
+    expose:
+      - "4173"
