@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  ckd-api:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    container_name: ckd_prediction_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../artifacts:/app/artifacts
+    restart: always
