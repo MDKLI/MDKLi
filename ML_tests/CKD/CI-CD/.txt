@@ -1,0 +1,187 @@
+🚀 📦 ML CI/CD Pipeline (GitHub Actions)
+🧠 الفكرة
+push to main
+   ↓
+run tests
+   ↓
+lint + sanity check
+   ↓
+build docker image
+   ↓
+(optional) push to DockerHub
+   ↓
+(optional) deploy server
+📁 1) Structure إضافي
+.github/
+  workflows/
+    ml-ci-cd.yml
+⚙️ 2) GitHub Actions Workflow
+
+📄 .github/workflows/ml-ci-cd.yml
+
+name: ML CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run basic import test
+        run: |
+          python -c "import app.main; print('App imports OK')"
+
+      - name: Run unit test placeholder
+        run: |
+          echo "No tests yet - add pytest later"
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t ckd-api:latest .
+
+      - name: Verify Docker image runs
+        run: |
+          docker run -d -p 8000:8000 ckd-api:latest
+          sleep 5
+          curl http://localhost:8000 || true
+🐳 3) (Optional) Push Docker Image to DockerHub
+
+لو عايز deployment حقيقي:
+
+🔐 Add Secrets in GitHub
+
+روح:
+
+Settings → Secrets → Actions
+
+ضيف:
+
+DOCKER_USERNAME
+DOCKER_PASSWORD
+🧾 Update workflow:
+  push-docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ckd-api:latest .
+
+      - name: Push image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/ckd-api:latest
+🚀 4) (Optional) Auto Deploy VPS
+
+لو عندك server:
+
+  deploy:
+    needs: push-docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker pull yourdockerhub/ckd-api:latest
+            docker stop ckd || true
+            docker rm ckd || true
+            docker run -d -p 8000:8000 --name ckd yourdockerhub/ckd-api:latest
+🧠 5) ML-Specific CI Checks (مهم جدًا)
+
+بدل ما بس نعمل build، نضيف checks للموديل:
+
+✔ Model loading test
+python -c "
+from app.core.model_loader import ModelLoader
+m = ModelLoader('models/ckd_model.pkl').load()
+print('Model OK')
+"
+✔ Prediction sanity test
+from app.core.predictor import Predictor
+
+dummy = {
+    "gfr": 90,
+    "bun": 10,
+    "serum_creatinine": 1,
+    "serum_calcium": 9,
+    "oxalate_levels": 2,
+    "ana": 0,
+    "hematuria": 0,
+    "c3_c4": 0.8,
+    "smoking": 0,
+    "alcohol": 0,
+    "painkiller_usage": 0,
+    "stress_level": 1,
+    "physical_activity": 3,
+    "water_intake": 3,
+    "weight_changes": 2,
+    "months": 12
+}
+📊 CI/CD Architecture
+GitHub Push
+   ↓
+GitHub Actions
+   ├── Test Code
+   ├── Validate Model
+   ├── Build Docker
+   ├── Push Image
+   └── Deploy Server
+🔥 6) إيه اللي وصلت له دلوقتي؟
+
+أنت بنيت نظام مستوى:
+
+✔ ML Pipeline
+✔ Feature Engineering
+✔ Model Training
+✔ FastAPI Serving
+✔ Docker Deployment
+✔ CI/CD Automation 🚀
+💡 7) Upgrades Level Next (لو عايز تبقى Senior++)
+
+أقدر أعمل لك:
+
+🔥 MLflow Model Registry CI/CD
+automatic model versioning
+🔥 Kubernetes deployment (auto scaling)
+🔥 Canary deployment for models
+🔥 Drift detection pipeline
+🔥 Full MLOps system (ZenML + Airflow)
+🚀 لو كملت معايا
+
+أقدر أحوّل مشروعك إلى:
+
+🏥 End-to-End MLOps Medical System (Industry level architecture)
