@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Artifacts
+artifacts/
+extracted_data/
+*.pkl
+*.csv
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# ZenML
+.zenml/
+
+# Environment
+.env
+*.txt.bak
+
+
+
+
+
+
+# git rm -r --cached artifacts/
+# git rm -r --cached extracted_data/

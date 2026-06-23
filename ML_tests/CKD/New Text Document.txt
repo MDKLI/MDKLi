@@ -1,0 +1,216 @@
+PS D:\Work\Healthcare project\MDKLi\ML_tests\CKD> python -m scripts.run_deployment
+Running continuous deployment pipeline...
+Starting continuous deployment pipeline...
+Daemon functionality is currently not supported on Windows.
+Initiating a new run for the pipeline: continuous_deployment_pipeline.
+Caching is disabled by default for continuous_deployment_pipeline.
+Using user: default
+Using stack: ckdpipeline_stack
+  artifact_store: default
+  experiment_tracker: mlflow_tracker
+  model_deployer: mlflow_deployer
+  orchestrator: default
+You can visualize your pipeline runs in the ZenML Dashboard. In order to try it locally, please run zenml login --local.
+Step build_model_step has started.
+Build Model Step Started with model_type=rf
+Initializing Random Forest Strategy
+Creating model from strategy...
+Building Random Forest model...
+Model Built Successfully: RandomForestClassifier
+Step build_model_step has finished in 4.995s.
+Step data_ingestion_step has started.
+Step data_ingestion_step has finished in 5.023s.
+Step feature_engineering_step has started.
+Applying feature engineering strategy.
+Applying one-hot encoding to features: []
+One-hot encoding completed.
+Step feature_engineering_step has finished in 5.699s.
+Step feature_extraction_step has started.
+Feature Extraction Step Started
+Input shape: (4000, 23)
+Running feature extraction pipeline...
+Starting CKD feature extraction...
+Feature extraction completed successfully.
+Final shape: (4000, 31)
+New features added: {'gfr_bun_ratio', 'inflammation_score', 'lifestyle_risk', 'c3_c4_norm', 'calcium_oxalate_ratio', 'kidney_function_score', 'weight_change_rate', 'bun_creatinine_ratio'}
+Output shape: (4000, 31)
+Step feature_extraction_step has finished in 5.430s.
+Step scaling_step has started.
+Scaling Step Started
+Running scaling pipeline...
+Applying Standard Scaling...
+Standard Scaling completed.
+Output shape: (4000, 31)
+Scaling Step Completed
+Step scaling_step has finished in 5.797s.
+Step power_transform_step has started.
+Starting power transformation using 'yeo-johnson' strategy.
+Starting power transformation pipeline.
+Applying transformation to 31 numeric columns.
+Applying Yeo-Johnson transformation.
+Yeo-Johnson transformation completed.
+Power transformation pipeline completed.
+Generating visualization plots.
+Saving visualizations to: D:\Work\Healthcare project\MDKLi\ML_tests\CKD\artifacts\power_transform_plots
+Generating visualization for: serum_creatinine
+Saved plot: artifacts\power_transform_plots\serum_creatinine_comparison.png
+Generating visualization for: gfr
+Saved plot: artifacts\power_transform_plots\gfr_comparison.png
+Generating visualization for: bun
+Saved plot: artifacts\power_transform_plots\bun_comparison.png
+Generating visualization for: serum_calcium
+Saved plot: artifacts\power_transform_plots\serum_calcium_comparison.png
+Generating visualization for: ana
+Saved plot: artifacts\power_transform_plots\ana_comparison.png
+Power transformation step completed.
+Step power_transform_step has finished in 12.745s.
+Step outlier_detection_step has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step has finished in 5.457s.
+Step outlier_detection_step_2 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_2 has finished in 5.644s.
+Step outlier_detection_step_3 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_3 has finished in 5.456s.
+Step outlier_detection_step_4 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_4 has finished in 6.371s.
+Step outlier_detection_step_5 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_5 has finished in 5.241s.
+Step outlier_detection_step_6 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_6 has finished in 5.322s.
+Step outlier_detection_step_7 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_7 has finished in 5.093s.
+Step outlier_detection_step_8 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_8 has finished in 5.289s.
+Step outlier_detection_step_9 has started.
+Strating outlier detection step with DataFrame of shape (4000, 31)
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Executing outlier detection strategy.
+Detecting outliers using the Z-score method.
+Outliers detected with Z-score threshold: 3.
+Removing outliers from the dataset.
+Outlier handling complete.
+Step outlier_detection_step_9 has finished in 5.668s.
+Step data_splitter_train_test_step has started.
+Splitting data using the selected strategy.
+Performing simple train-test split.
+Train-test split completed.
+Step data_splitter_train_test_step has finished in 20.349s.
+Step mi_selection_step has started.
+Applying Mutual Information Feature Selection...
+Saved raw MI scores.
+Selected top 10 features: ['gfr', 'kidney_function_score', 'gfr_bun_ratio', 'cluster', 'urine_ph', 'inflammation_score', 'c3_c4', 'c3_c4_norm', 'bun', 'ana']
+Saved MI plot to: artifacts\mi_selection\mi_scores.png
+Selected 10 features
+Step mi_selection_step has finished in 6.998s.
+Step filter_test_features_step has started.
+Step filter_test_features_step has finished in 4.992s.
+Step train_model_step has started.
+Model saved to artifacts/ckd_model.pkl
+Step train_model_step has finished in 5.624s.
+Step evaluate_model_step has started.
+Evaluation Step Started
+Running evaluation pipeline...
+Evaluating classification model...
+Accuracy: 0.9912
+F1-score (weighted): 0.9912
+Evaluation Completed Successfully
+Metrics -> Accuracy: 0.9912, F1: 0.9912
+Step evaluate_model_step has finished in 0.906s.
+Pipeline run has finished in 2m47s.
+Running inference pipeline...
+Starting inference pipeline...
+Initiating a new run for the pipeline: inference_pipeline.
+Caching is disabled by default for inference_pipeline.
+Using user: default
+Using stack: ckdpipeline_stack
+  artifact_store: default
+  experiment_tracker: mlflow_tracker
+  model_deployer: mlflow_deployer
+  orchestrator: default
+You can visualize your pipeline runs in the ZenML Dashboard. In order to try it locally, please run zenml login --local.
+Step dynamic_importer has started.
+Step dynamic_importer has finished in 0.219s.
+Step model_loader has started.
+Model 'CKD Prediction Model' loaded successfully from artifacts/ckd_model.pkl
+Step model_loader has finished in 4.493s.
+Step predictor has started.
+Running prediction on input shape: (1, 10)
+Prediction result: [0]
+Step predictor has finished in 6.259s.
+Pipeline run has finished in 16.769s.
+Now run 
+     mlflow ui --backend-store-uri sqlite:///C:\Users\smart tec\AppData\Roaming\zenml\local_stores\8ad67872-f3d4-4a54-9e26-7e81a732d868\mlflow.db
+To inspect your experiment runs within the mlflow UI.

@@ -1,0 +1,96 @@
+name: ML CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test app imports
+        run: |
+          python -c "from app.main import app; print('App imports OK')"
+
+      - name: Test model loads
+        run: |
+          python -c "
+          import joblib
+          model = joblib.load('artifacts/ckd_model.pkl')
+          print('Model loads OK')
+          print(type(model))
+          "
+
+      - name: Test prediction
+        run: |
+          python -c "
+          import joblib
+          import pandas as pd
+
+          model = joblib.load('artifacts/ckd_model.pkl')
+
+          data = {
+              'gfr':                   [-0.176036],
+              'kidney_function_score': [ 0.002904],
+              'gfr_bun_ratio':         [ 0.158833],
+              'cluster':               [ 0.734180],
+              'bun':                   [-0.351793],
+              'c3_c4':                 [ 0.704711],
+              'inflammation_score':    [-0.720636],
+              'ana':                   [-0.654654],
+              'alcohol':               [ 0.0],
+              'urine_ph':              [ 0.123456],
+          }
+
+          df = pd.DataFrame(data)
+          pred = model.predict(df)
+          print(f'Prediction OK: {pred}')
+          assert pred[0] in [0, 1, 2, 3, 4, 5], 'Invalid prediction'
+          print('All tests passed')
+          "
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -f docker/dockerfile -t ckd-api:latest .
+
+      - name: Test Docker container runs
+        run: |
+          docker run -d -p 8000:8000 --name ckd_test ckd-api:latest
+          sleep 5
+          curl -f http://localhost:8000 || exit 1
+          docker stop ckd_test
+          echo "Docker test passed"
+
+
+# git init
+# git add .
+# git commit -m "first commit"
+# git branch -M main
+# git remote add origin https://github.com/username/CKD.git
+# git push -u origin main
+
+# github.com/username/CKD/actions
