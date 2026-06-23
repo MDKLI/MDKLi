@@ -1,75 +1,54 @@
 import logging
-from typing import Annotated, Literal
-
+import joblib
+import os
+from typing import Tuple, Literal
 import pandas as pd
 from zenml import step
-
-from src.power_transform import (
-    BoxCoxStrategy,
-    PowerTransformerEngine,
-    YeoJohnsonStrategy,
-    plot_before_after,
-)
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+from src.power_transform import YeoJohnsonStrategy, BoxCoxStrategy, PowerTransformerEngine, plot_before_after
 
 logger = logging.getLogger(__name__)
 
 
 @step
 def power_transform_step(
-    df: pd.DataFrame,
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
     strategy: Literal["yeo-johnson", "box-cox"] = "yeo-johnson",
-    target_col: str | None = None,
     generate_plots: bool = True,
     n_plot_columns: int = 5,
-) -> Annotated[pd.DataFrame, "transformed_data"]:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-
-    logger.info(
-        f"Starting power transformation using '{strategy}' strategy."
-    )
+    logger.info(f"Starting power transformation using '{strategy}' strategy.")
 
     if strategy == "yeo-johnson":
         transform_strategy = YeoJohnsonStrategy()
-
     elif strategy == "box-cox":
         transform_strategy = BoxCoxStrategy()
-
     else:
-        raise ValueError(
-            f"Unsupported strategy: {strategy}"
-        )
+        raise ValueError(f"Unsupported strategy: {strategy}")
 
-    transformer = PowerTransformerEngine(
-        strategy=transform_strategy,
-        target_col=target_col,
-    )
+    numeric_cols = X_train.select_dtypes(include=["number"]).columns
 
-    transformed_df = transformer.apply_transform(df)
+    transform_strategy.transformer.fit(X_train[numeric_cols])
+
+    X_train_transformed = X_train.copy()
+    X_test_transformed = X_test.copy()
+
+    X_train_transformed[numeric_cols] = transform_strategy.transformer.transform(X_train[numeric_cols])
+    X_test_transformed[numeric_cols] = transform_strategy.transformer.transform(X_test[numeric_cols])
+
+    os.makedirs("artifacts", exist_ok=True)
+    joblib.dump(transform_strategy.transformer, "artifacts/power_transformer.pkl")
+    logger.info("Power transformer saved to artifacts/power_transformer.pkl")
 
     if generate_plots:
-        logger.info("Generating visualization plots.")
-
-        numeric_cols = transformed_df.select_dtypes(
-            include=["number"]
-        ).columns.tolist()
-
-        if target_col and target_col in numeric_cols:
-            numeric_cols.remove(target_col)
-
-        plot_cols = numeric_cols[:n_plot_columns]
-
+        plot_cols = list(numeric_cols[:n_plot_columns])
         plot_before_after(
-            original_df=df,
-            transformed_df=transformed_df,
+            original_df=X_train,
+            transformed_df=X_train_transformed,
             columns=plot_cols,
         )
 
     logger.info("Power transformation step completed.")
 
-    return transformed_df
+    return X_train_transformed, X_test_transformed

@@ -14,7 +14,11 @@ class ModelLoader:
         self.path = path
 
     def load_model(self):
-        logger.info(f"Loading model from {self.path}")
-        model = joblib.load(self.path)
-        logger.info("Model loaded successfully")
-        return model
+        try:
+            logger.info(f"Loading model from {self.path}")
+            model = joblib.load(self.path)
+            logger.info("Model loaded successfully")
+            return model
+        except Exception as e:
+            logger.error(f"Failed to load model: {e}")
+            raise RuntimeError(f"Failed to load model: {e}") from e
