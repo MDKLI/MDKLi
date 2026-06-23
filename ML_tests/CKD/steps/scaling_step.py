@@ -1,43 +1,44 @@
 import logging
+import joblib
+import os
+from typing import Tuple
 import pandas as pd
 from zenml import step
+from src.scaling import DataScaler, StandardScalingStrategy, MinMaxScalingStrategy
 
-from src.scaling import (
-    DataScaler,
-    StandardScalingStrategy,
-    MinMaxScalingStrategy
-)
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logger = logging.getLogger(__name__)
 
 
 @step
 def scaling_step(
-    df: pd.DataFrame,
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
     strategy: str = "standard"
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-    logging.info("Scaling Step Started")
+    logger.info("Scaling Step Started")
 
-    if df is None or df.empty:
-        raise ValueError("Input dataframe is empty or None")
-
-    # ===================== Strategy Selection =====================
     if strategy == "standard":
-        scaler = DataScaler(StandardScalingStrategy())
+        scaling_strategy = StandardScalingStrategy()
     elif strategy == "minmax":
-        scaler = DataScaler(MinMaxScalingStrategy())
+        scaling_strategy = MinMaxScalingStrategy()
     else:
         raise ValueError(f"Unsupported scaling strategy: {strategy}")
 
-    # ===================== Apply Scaling =====================
-    scaled_df = scaler.apply_scaling(df.copy())
+    numeric_cols = X_train.select_dtypes(include=["number"]).columns
 
-    logging.info(f"Output shape: {scaled_df.shape}")
-    logging.info("Scaling Step Completed")
+    scaling_strategy.scaler.fit(X_train[numeric_cols])
 
-    return scaled_df
+    X_train_scaled = X_train.copy()
+    X_test_scaled = X_test.copy()
+
+    X_train_scaled[numeric_cols] = scaling_strategy.scaler.transform(X_train[numeric_cols])
+    X_test_scaled[numeric_cols] = scaling_strategy.scaler.transform(X_test[numeric_cols])
+
+    os.makedirs("artifacts", exist_ok=True)
+    joblib.dump(scaling_strategy.scaler, "artifacts/scaler.pkl")
+    logger.info("Scaler saved to artifacts/scaler.pkl")
+
+    logger.info(f"Train shape: {X_train_scaled.shape}, Test shape: {X_test_scaled.shape}")
+
+    return X_train_scaled, X_test_scaled
