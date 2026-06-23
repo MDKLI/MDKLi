@@ -1,18 +1,20 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 
 
 class CKDInput(BaseModel):
     gfr: float
-    kidney_function_score: float
-    gfr_bun_ratio: float
-    cluster: float
-    urine_ph: float
-    inflammation_score: float
-    c3_c4: float
-    c3_c4_norm: float
+    serum_creatinine: float
     bun: float
-    ana: float
+    serum_calcium: float
+    urine_ph: float
+    c3_c4: float
+    ana: int
+    hematuria: int
+    cluster: int
+    oxalate_levels: float
+    diet: Literal["high protein", "low protein", "balanced", "vegetarian"]
+    alcohol: Literal["daily", "never", "occasionally"]
 
 
 class CKDPredictionResponse(BaseModel):

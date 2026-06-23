@@ -42,23 +42,26 @@ jobs:
           python -c "
           import joblib
           import pandas as pd
+
           model = joblib.load('artifacts/ckd_model.pkl')
+
           data = {
-              'gfr': [-0.176036],
-              'kidney_function_score': [0.002904],
-              'gfr_bun_ratio': [0.158833],
-              'cluster': [0.734180],
-              'urine_ph': [-0.370931],
-              'inflammation_score': [-0.720636],
-              'c3_c4': [0.704711],
-              'c3_c4_norm': [0.704711],
-              'bun': [-0.351793],
-              'ana': [-0.654654]
+              'gfr':                   [-0.176036],
+              'kidney_function_score': [ 0.002904],
+              'gfr_bun_ratio':         [ 0.158833],
+              'cluster':               [ 0.734180],
+              'bun':                   [-0.351793],
+              'c3_c4':                 [ 0.704711],
+              'inflammation_score':    [-0.720636],
+              'ana':                   [-0.654654],
+              'alcohol':               [ 0.0],
+              'urine_ph':              [ 0.123456],
           }
+
           df = pd.DataFrame(data)
           pred = model.predict(df)
           print(f'Prediction OK: {pred}')
-          assert pred[0] in [0,1,2,3,4,5], 'Invalid prediction'
+          assert pred[0] in [0, 1, 2, 3, 4, 5], 'Invalid prediction'
           print('All tests passed')
           "
 
@@ -83,18 +86,11 @@ jobs:
           echo "Docker test passed"
 
 
-
-
-
-
-
 # git init
 # git add .
 # git commit -m "first commit"
 # git branch -M main
 # git remote add origin https://github.com/username/CKD.git
 # git push -u origin main
-
-
 
 # github.com/username/CKD/actions

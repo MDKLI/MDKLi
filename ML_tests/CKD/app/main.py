@@ -25,12 +25,31 @@ def health():
 @app.post("/predict", response_model=CKDPredictionResponse)
 def predict(input_data: CKDInput):
     logger.info("Prediction request received")
-    data = input_data.dict()
+    data = input_data.model_dump()
     pred = service.predict(data)
     proba = service.predict_with_proba(data)
     return CKDPredictionResponse(ckd_stage=pred, probability=proba)
 
 
 
-
 # uvicorn app.main:app --reload
+
+
+
+
+
+
+# {
+#   "gfr": 32.9,
+#   "serum_creatinine": 0.68,
+#   "bun": 7.5,
+#   "serum_calcium": 10.0,
+#   "urine_ph": 7.86,
+#   "c3_c4": 138.2,
+#   "ana": 0,
+#   "hematuria": 0,
+#   "cluster": 5,
+#   "oxalate_levels": 5.0,
+#   "diet": "high protein",
+#   "alcohol": "occasionally"
+# }
