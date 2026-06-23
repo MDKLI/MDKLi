@@ -31,10 +31,7 @@ class DataIngestorFactory:
 if __name__ == "__main__":
     ingestor = CSVDataIngestor()
 
-    file_path = pd.read_csv(
-    "extracted_data/updated_ckd_dataset_with_stages.csv"
-)
-
+    file_path = "extracted_data/updated_ckd_dataset_with_stages.csv"
     df = ingestor.ingest(file_path)
 
     print(df.head())

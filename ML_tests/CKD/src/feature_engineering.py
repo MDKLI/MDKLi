@@ -51,12 +51,23 @@ class FeatureEngineer:
 
 
 if __name__ == "__main__":
-     
-     df = pd.read_csv(
+
+    df = pd.read_csv(
         "D:/Work/Healthcare project/MDKLi/ML_tests/CKD/"
         "extracted_data/updated_ckd_dataset_with_stages.csv"
     )
-     
-     to_encode = df.select_dtypes(exclude="number").columns.tolist()
-     
-     onehot_encoder = FeatureEngineer(OneHotEncoding(features=to_encode))
+
+    to_encode = df.select_dtypes(exclude="number").columns.tolist()
+
+    engineer = FeatureEngineer(OneHotEncoding(features=to_encode))
+
+    df_encoded = engineer.apply_feature_engineering(df)
+
+    df_encoded.to_csv(
+        "D:/Work/Healthcare project/MDKLi/ML_tests/CKD/"
+        "extracted_data/encoded_ckd_dataset.csv",
+        index=False
+    )
+
+    print(f"Saved encoded dataset: {df_encoded.shape}")
+    print(df_encoded.head())

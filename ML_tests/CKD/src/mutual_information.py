@@ -85,7 +85,7 @@ def plot_mi_scores(mi_scores: pd.Series, save_dir="artifacts/mi_selection"):
     path = Path(save_dir)
     path.mkdir(parents=True, exist_ok=True)
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(15, 10))
     sns.barplot(
         x=mi_scores.values,
         y=mi_scores.index
