@@ -112,6 +112,13 @@ class RabbitMQService {
     return this.publishEvent('doctor.deleted', { id: doctorId })
   }
 
+  async publishUserCreated(user: any): Promise<boolean> {
+    return this.publishEvent('user.created', user)
+  }
+
+  async publishUserUpdated(user: any): Promise<boolean> {
+    return this.publishEvent('user.updated', user)
+  }
   // Facility events
   async publishFacilityCreated(facility: any): Promise<boolean> {
     return this.publishEvent('facility.created', facility)

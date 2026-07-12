@@ -22,6 +22,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/booking': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+      },
+    },
+  },
   preview: {
     host: true,
     allowedHosts: ['dashboard'],

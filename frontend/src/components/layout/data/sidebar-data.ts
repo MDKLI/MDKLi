@@ -1,13 +1,16 @@
 import {
   Home,
   BookMarked,
-  CalendarDays,
   MessagesSquare,
   User,
   Building2,
   HelpCircle,
   BrainCircuit,
   MapPin,
+  CalendarClock,
+  Mail,
+  UserPlus,
+  Users,
 } from 'lucide-react'
 
 import { type SidebarData } from '../types'
@@ -33,12 +36,12 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Dashboard',
-          url: '/_authenticated/dashboard',
+          url: '/dashboard',
           icon: Home,
         },
         {
           title: 'Bookings',
-          url: '/tasks',
+          url: '/booking',
           icon: BookMarked,
         },
         {
@@ -46,11 +49,6 @@ export const sidebarData: SidebarData = {
           url: '/chats',
           badge: '3',
           icon: MessagesSquare,
-        },
-        {
-          title: 'Calendar',
-          url: '/users',
-          icon: CalendarDays,
         },
         {
           title: 'AI Assistant',
@@ -101,4 +99,53 @@ export function getProfileMenuItems(role: string | undefined) {
   }
   
   return items
+}
+
+// Helper function to get doctor-specific sidebar items
+export function getDoctorSidebarItems(role: string | undefined) {
+  const isDoctor = role === 'doctor'
+  
+  if (!isDoctor) {
+    return []
+  }
+  
+  return [
+    {
+      title: 'Availability',
+      url: '/availability',
+      icon: CalendarClock,
+    },
+    {
+      title: 'My Invitations',
+      url: '/my-invitations',
+      icon: Mail,
+    },
+  ]
+}
+
+// Helper function to get facility-specific sidebar items (hospitals/medical centers only)
+export function getFacilitySidebarItems(role: string | undefined) {
+  const isFacility = role === 'clinic_admin'
+
+  if (!isFacility) {
+    return []
+  }
+
+  return [
+    {
+      title: 'Invite Doctor',
+      url: '/invite-doctor',
+      icon: UserPlus,
+    },
+    {
+      title: 'My Invitations',
+      url: '/facility-invitations',
+      icon: Mail,
+    },
+    {
+      title: 'Branch Doctors',
+      url: '/branch-doctors',
+      icon: Users,
+    },
+  ]
 }

@@ -8,6 +8,7 @@ import { PharmacyProfile } from '../entity/PharmacyProfile';
 import { Branch } from '../entity/Branch';
 import { validationResult } from 'express-validator';
 import logger from '../utility/logger';
+import { publishBranchCreated, publishBranchUpdated, publishDoctorUpdated } from '../services/event-publisher.service';
 
 export const getMyProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -213,6 +214,9 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
         }
         
         await repo.save(profile);
+        publishDoctorUpdated(profile.id).catch(err => {   // ← ADD HERE
+          logger.error('Failed to publish doctor.updated event:', err);
+        });
         
         res.json({ message: 'Profile updated', profile });
         return;
@@ -285,6 +289,7 @@ async function saveBranches(
     // Create or update branches
     for (const branchData of branchesData) {
       let branch: Branch;
+      let isExisting = false;
       
       // Check if ID looks like a UUID (has dashes and is 36 chars) vs frontend-generated timestamp
       const isUUID = branchData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(branchData.id);
@@ -296,6 +301,7 @@ async function saveBranches(
         });
         if (existing) {
           branch = existing;
+          isExisting = true;
         } else {
           branch = new Branch();
           branch.user = { id: userId } as User;
@@ -316,6 +322,19 @@ async function saveBranches(
       branch.media_urls = branchData.mediaUrls || branchData.media_urls || [];
       
       await branchRepo.save(branch);
+      
+      // Publish event to booking service
+      if (isExisting) {
+        // Update existing branch
+        publishBranchUpdated(branch.id, userId).catch(err => {
+          logger.error('Failed to publish branch.updated event:', err);
+        });
+      } else {
+        // Create new branch
+        publishBranchCreated(branch.id, userId).catch(err => {
+          logger.error('Failed to publish branch.created event:', err);
+        });
+      }
     }
   } catch (error) {
     logger.error('Save branches error:', error);

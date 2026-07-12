@@ -75,3 +75,4 @@ vite.svg
 /backend/chat
 /backend/review
 /backend/search-filter
+.aider*

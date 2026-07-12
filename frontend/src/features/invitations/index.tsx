@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { invitationApi } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { Loader2, Check, X, Building2, MapPin, DollarSign, Clock } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
+import { chatApi } from '@/lib/chat-api'
+import { useNavigate } from '@tanstack/react-router'
 
 interface Invitation {
   id: string
@@ -58,7 +61,22 @@ export function DoctorInvitationsPage() {
       setIsLoading(false)
     }
   }
+  const navigate = useNavigate()
+  const [messagingId, setMessagingId] = useState<string | null>(null)
 
+  const handleMessage = async (invitedById: string) => {
+    setMessagingId(invitedById)
+    try {
+      const result = await chatApi.openRoomWith(invitedById)
+      if (result.data) {
+        navigate({ to: '/chats', search: { room: result.data.id } as any })
+      } else {
+        toast.error(result.error || 'Failed to start chat')
+      }
+    } finally {
+      setMessagingId(null)
+    }
+  }
   const handleAccept = async (invitationId: string) => {
     setProcessingId(invitationId)
     try {
@@ -213,6 +231,14 @@ export function DoctorInvitationsPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(invitation.status)}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMessage(invitation.invitedBy.id)}
+                              disabled={messagingId === invitation.invitedBy.id}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(invitation.createdAt)}
                             </span>

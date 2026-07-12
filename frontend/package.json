@@ -45,6 +45,7 @@
     "@tanstack/react-router": "^1.168.22",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.15.0",
+    "socket.io-client": "^4.7.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
@@ -52,6 +53,7 @@
     "framer-motion": "^12.40.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.8.0",
+    "moment": "^2.30.1",
     "react": "^19.2.5",
     "react-day-picker": "9.14.0",
     "react-dom": "^19.2.5",
@@ -93,6 +95,7 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.8",
     "vitest": "^4.1.4",
+    "socket.io-client": "^4.7.5",
     "vitest-browser-react": "^2.2.0"
   }
 }

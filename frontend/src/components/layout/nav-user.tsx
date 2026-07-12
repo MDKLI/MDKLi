@@ -5,12 +5,11 @@ import {
   LogOut,
   MapPin,
   Palette,
-  Sparkles,
   User,
-  Building2,
   UserPlus,
   Mail,
   Users,
+  Heart,
 } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -47,7 +46,6 @@ export function NavUser({ user }: NavUserProps) {
   const { auth } = useAuthStore()
   const userRole = auth.user?.role || ''
   const isPatient = userRole === 'patient'
-  const isDoctor = userRole === 'doctor'
   const isClinicAdmin = userRole === 'clinic_admin'
   const isPharmacyAdmin = userRole === 'pharmacy_admin'
   const isFacility = isClinicAdmin || isPharmacyAdmin
@@ -131,13 +129,6 @@ export function NavUser({ user }: NavUserProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <Sparkles />
-                  Upgrade to Pro
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
               <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
                 Settings
               </DropdownMenuLabel>
@@ -162,41 +153,44 @@ export function NavUser({ user }: NavUserProps) {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {isDoctor && (
-                  <DropdownMenuItem asChild>
-                    <Link to='/settings/my-invitations'>
-                      <Building2 className="mr-2 h-4 w-4" />
-                      My Invitations
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {canInviteDoctors && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                      Facility Management
-                    </DropdownMenuLabel>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link to='/wishlist'>
+                    <Heart className="mr-2 h-4 w-4" />
+                    Wishlist
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              {canInviteDoctors && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Facility Management
+                  </DropdownMenuLabel>
+                  <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
-                      <Link to='/settings/invite-doctor'>
+                      <Link to='/invite-doctor'>
                         <UserPlus className="mr-2 h-4 w-4" />
                         Invite Doctor
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to='/settings/invitations'>
+                      <Link to='/my-invitations'>
                         <Mail className="mr-2 h-4 w-4" />
-                        Invitations
+                        My Invitations
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to='/settings/branch-doctors'>
+                      <Link to='/branch-doctors'>
                         <Users className="mr-2 h-4 w-4" />
                         Branch Doctors
                       </Link>
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuGroup>
+                  </DropdownMenuGroup>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant='destructive'

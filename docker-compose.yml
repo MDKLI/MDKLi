@@ -78,12 +78,9 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/mdkli-media || true;
-      /usr/bin/mc policy set public myminio/mdkli-media;
-      exit 0;
-      "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin
+      minioadmin; /usr/bin/mc mb myminio/mdkli-media || true; /usr/bin/mc policy
+      set public myminio/mdkli-media; exit 0; "
     networks:
       - app-network
 
@@ -122,6 +119,7 @@ services:
       - MEILI_HOST=http://meilisearch:7700
       - MEILI_API_KEY=masterKey
       - AUTH_SERVICE_URL=http://auth-service:3000
+      - BOOKING_SERVICE_URL=http://booking-service:3004
       - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
     depends_on:
       - postgres
@@ -131,6 +129,21 @@ services:
       - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -154,12 +167,67 @@ services:
       timeout: 10s
       retries: 3
 
+  # Booking Service
+  booking-service:
+    build: ./backend/booking-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/bookingdb
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - LOG_LEVEL=info
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Chat Service
+  chat-service:
+    build: ./backend/chat-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chatdb
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_PUBLIC_ENDPOINT=localhost
+      - MINIO_PUBLIC_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=mdkli-media
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - rabbitmq
+      - minio
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Main Frontend (Vite - serves both landing and dashboard)
   frontend:
     build: ./frontend
     ports:
       - "80:4173"
     environment:
+      - VITE_CHAT_API_URL=http://localhost:3005
+      - VITE_CHAT_SOCKET_URL=http://localhost:3005
       - NODE_ENV=production
       - VITE_API_URL=http://localhost:3000
       - VITE_SEARCH_API_URL=http://localhost:3001
@@ -178,3 +246,4 @@ volumes:
   minio_data:
   meilisearch_data:
   rabbitmq_data:
+  redis_data:

@@ -13,8 +13,10 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from "express-validator";
 import logger from "../utility/logger";
 import { 
-  publishDoctorCreated, 
-  publishFacilityCreated 
+  publishDoctorCreated,
+  publishFacilityCreated,
+  publishBranchCreated,
+  publishUserCreated
 } from "../services/event-publisher.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
@@ -159,6 +161,11 @@ export const completeRegistration = async (req: Request, res: Response): Promise
         logger.info('Creating patient profile with data:', JSON.stringify(patientProfile, null, 2));
         await queryRunner.manager.save(patientProfile);
         logger.info('Patient profile saved successfully');
+        setImmediate(() => {
+        publishUserCreated(user.id).catch(err => {
+          logger.error('Failed to publish user created event:', err);
+        });
+      });
         break;
       }
       case 'clinic_admin': {
@@ -386,5 +393,10 @@ async function createBranches(
     }
     
     await branchRepo.save(branch);
+    
+    // Publish branch created event
+    publishBranchCreated(branch.id, user.id).catch(err => {
+      logger.error('Failed to publish branch.created event:', err);
+    });
   }
 }
