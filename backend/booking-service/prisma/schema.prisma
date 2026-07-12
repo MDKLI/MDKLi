@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Doctor entity - synced from auth service via RabbitMQ
+model Doctor {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  name            String
+  specialization  String?
+  bio             String?
+  avatarUrl       String?   @map("avatar_url")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  branches      Branch[]
+  appointments  Appointment[]
+  settings      DoctorSettings?
+
+  @@map("doctors")
+}
+
+// Branch entity - physical or virtual location under a doctor
+model Branch {
+  id                String   @id @default(uuid())
+  doctorId          String   @map("doctor_id")
+  name              String
+  address           String?
+  city              String?
+  area              String?
+  phoneNumbers      String[] @map("phone_numbers")
+  consultationFee   Int?     @map("consultation_fee")
+  mediaUrls         String[] @map("media_urls")
+  googleMapsUrl     String?  @map("google_maps_url")
+  latitude          Float?
+  longitude         Float?
+  isVirtual         Boolean  @default(false) @map("is_virtual")
+  timezone          String   @default("UTC")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctor            Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  availabilityRules AvailabilityRule[]
+  availabilityOverrides AvailabilityOverride[]
+  appointments      Appointment[]
+
+  @@map("branches")
+}
+
+// AvailabilityRule - recurring weekly schedule template
+model AvailabilityRule {
+  id                  String  @id @default(uuid())
+  branchId            String  @map("branch_id")
+  dayOfWeek           Int     @map("day_of_week") // 0-6, Sunday=0
+  startTime           String  @map("start_time") // "HH:MM" format
+  endTime             String  @map("end_time")   // "HH:MM" format
+  slotDurationMinutes Int     @map("slot_duration_minutes")
+  isActive            Boolean @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("availability_rules")
+}
+
+// AvailabilityOverride - block off dates or add extra availability
+model AvailabilityOverride {
+  id        String              @id @default(uuid())
+  branchId  String              @map("branch_id")
+  date      DateTime            @db.Date
+  type      AvailabilityOverrideType
+  startTime String?             @map("start_time") // Optional for BLOCK type
+  endTime   String?             @map("end_time")   // Optional for BLOCK type
+  reason    String?
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("availability_overrides")
+}
+
+enum AvailabilityOverrideType {
+  BLOCK
+  EXTRA
+}
+
+// Patient/User - synced from auth service
+model Patient {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  email     String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  appointments Appointment[]
+
+  @@map("patients")
+}
+
+// Appointment - booked slot
+model Appointment {
+  id            String            @id @default(uuid())
+  branchId      String            @map("branch_id")
+  doctorId      String            @map("doctor_id")
+  patientId     String            @map("patient_id")
+  date          DateTime          @db.Date
+  startTime     String            @map("start_time") // "HH:MM" format
+  endTime       String            @map("end_time")   // "HH:MM" format
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  cancelledBy   CancelledByType?  @map("cancelled_by")
+  cancelledAt   DateTime?         @map("cancelled_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Unique constraint to prevent double-booking
+  @@unique([branchId, date, startTime, status], name: "unique_branch_slot", map: "idx_unique_appointment_slot")
+  @@index([branchId, date])
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([status])
+  @@map("appointments")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum CancelledByType {
+  DOCTOR
+  PATIENT
+}
+
+// DoctorSettings - advanced booking settings per doctor
+model DoctorSettings {
+  id                  String   @id @default(uuid())
+  doctorId            String   @unique @map("doctor_id")
+  autoAccept          Boolean  @default(false) @map("auto_accept")
+  noticePeriod        String   @default("24_hours") @map("notice_period")
+  bufferTime          Int      @default(0) @map("buffer_time") // in minutes
+  maxDailyBookings    Int      @default(10) @map("max_daily_bookings")
+  maxWeeklyBookings   Int      @default(50) @map("max_weekly_bookings")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@map("doctor_settings")
+}

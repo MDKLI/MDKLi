@@ -4,7 +4,6 @@ import {
   User,
   Palette,
   MapPin,
-  Building2,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -37,17 +36,7 @@ export function Settings() {
     })
   }
   
-  // Facility management moved to dropdown menu
-  // Invite Doctor, Invitations, and Branch Doctors are now in the user dropdown
-  
-  // Add Doctor Invitations tab for doctors
-  if (isDoctor) {
-    sidebarNavItems.push({
-      title: 'My Invitations',
-      href: '/settings/my-invitations',
-      icon: <Building2 size={18} />,
-    })
-  }
+  // Note: Availability and My Invitations moved to main sidebar for doctors
   
   return (
     <div className='flex flex-col gap-6'>

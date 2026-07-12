@@ -1,7 +1,6 @@
 // src/components/layout/app-sidebar.tsx
 import { Languages, Search } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { ThemeSwitch } from '@/components/theme-switch'
@@ -16,6 +15,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { useEffect } from 'react'
+import { useChatStore } from '@/stores/chat-store'
+import { chatApi } from '@/lib/chat-api'
+import { connectChatSocket, onNewMessage, onMessagesRead } from '@/lib/chat-socket'
+import { sidebarData, getDoctorSidebarItems, getFacilitySidebarItems } from './data/sidebar-data'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { auth } = useAuthStore()
@@ -32,7 +36,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: userEmail,
     avatar: userPhoto,
   }
-  
+  const unreadCount = useChatStore((s) => s.unreadCount)
+  const setUnreadCount = useChatStore((s) => s.setUnreadCount)
+
+  useEffect(() => {
+    connectChatSocket()
+    const refreshUnread = () => {
+      chatApi.getRooms().then((result) => {
+        if (result.data) {
+          const total = result.data.reduce((sum, r) => sum + r.unreadCount, 0)
+          setUnreadCount(total)
+        }
+      })
+    }
+    refreshUnread()
+    const unsubNew = onNewMessage(() => refreshUnread())
+    const unsubRead = onMessagesRead(() => refreshUnread())
+    return () => {
+      unsubNew()
+      unsubRead()
+    }
+  }, [])
+
+  const navGroups = sidebarData.navGroups.map((group) => ({
+    ...group,
+    items: group.items.map((item) =>
+      item.title === 'Chats'
+        ? { ...item, badge: unreadCount > 0 ? String(unreadCount) : undefined }
+        : item
+    ),
+  }))
   return (
     <Sidebar variant='floating' side='left' collapsible='icon' {...props}>
       <SidebarHeader>
@@ -59,10 +92,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        {sidebarData.navGroups.map((group) => (
-          <NavGroup key={group.title} {...group} />
-        ))}
+        <SidebarContent>
+          {navGroups.map((group) => (
+            <NavGroup key={group.title} {...group} />
+          ))}
+        
+        {/* Doctor-specific items */}
+        {auth.user?.role === 'doctor' && (
+          <NavGroup 
+            title="Doctor" 
+            items={getDoctorSidebarItems(auth.user?.role)} 
+          />
+        )}
+
+        {/* Facility Management — hospitals and medical centers only */}
+        {auth.user?.role === 'clinic_admin' && (
+          <NavGroup
+            title="Facility Management"
+            items={getFacilitySidebarItems(auth.user?.role)}
+          />
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

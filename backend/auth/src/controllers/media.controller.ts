@@ -8,7 +8,7 @@ import { Branch } from '../entity/Branch';
 import { validationResult } from 'express-validator';
 import logger from '../utility/logger';
 import multer from 'multer';
-
+import { publishBranchUpdated } from '../services/event-publisher.service';
 // Configure multer for file upload
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -138,6 +138,9 @@ export const uploadBranchMedia = async (req: Request, res: Response): Promise<vo
     }
     branch.media_urls.push(fileUrl);
     await branchRepo.save(branch);
+    publishBranchUpdated(branch.id, user.id).catch(err => {
+      logger.error('Failed to publish branch.updated after media delete:', err);
+    });
 
     res.json({
       message: 'Branch media uploaded successfully',

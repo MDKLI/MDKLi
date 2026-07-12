@@ -1,6 +1,23 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-import { getCookie } from './cookies'
+import { getCookie, removeCookie } from './cookies'
+
+const ACCESS_TOKEN_COOKIE = 'thisisjustarandomstring'
+const REFRESH_TOKEN_COOKIE = 'refreshtoken'
+
+let isHandlingSessionExpiry = false
+
+function handleSessionExpired() {
+  if (isHandlingSessionExpiry) return
+  isHandlingSessionExpiry = true
+
+  removeCookie(ACCESS_TOKEN_COOKIE)
+  removeCookie(REFRESH_TOKEN_COOKIE)
+  localStorage.removeItem('user')
+
+  // Hard redirect so every store/component resets cleanly
+  window.location.href = '/sign-in'
+}
 
 interface ApiResponse<T> {
   data?: T
@@ -10,9 +27,15 @@ interface ApiResponse<T> {
 
 export async function apiClient<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit & { params?: Record<string, string> } = {}
 ): Promise<ApiResponse<T>> {
-  const url = `${API_URL}${endpoint}`
+  let url = `${API_URL}${endpoint}`
+  
+  // Add query params if provided
+  if (options.params) {
+    const searchParams = new URLSearchParams(options.params)
+    url += `?${searchParams.toString()}`
+  }
   
   const config: RequestInit = {
     headers: {
@@ -39,6 +62,13 @@ export async function apiClient<T>(
   try {
     const response = await fetch(url, config)
     const data = await response.json()
+
+    if (response.status === 401) {
+      handleSessionExpired()
+      return {
+        error: data.message || 'Session expired',
+      }
+    }
 
     if (!response.ok) {
       return {
@@ -253,5 +283,140 @@ export const invitationApi = {
   getBranchDoctors: (branchId: string) =>
     apiClient<{ data: any[] }>(`/api/invitations/branch/${branchId}/doctors`, {
       method: 'GET',
+    }),
+}
+
+// Booking API
+export const bookingApi = {
+  // Get doctor settings
+  getDoctorSettings: (doctorId: string) =>
+    apiClient<{ success: boolean; data: any }>('/api/booking/doctor/settings', {
+      method: 'GET',
+      params: { doctorId },
+    }),
+
+  // Update doctor settings
+  updateDoctorSettings: (doctorId: string, data: any) =>
+    apiClient<{ success: boolean; data: any }>('/api/booking/doctor/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ ...data, doctorId }),
+    }),
+
+  // Get pending sessions for a doctor
+  getPendingSessions: (doctorId: string) =>
+    apiClient<{ success: boolean; data: any[] }>('/api/booking/doctor/appointments', {
+      method: 'GET',
+      params: { doctorId, status: 'PENDING' },
+    }),
+
+  // Get session history for a doctor
+  getSessionHistory: (doctorId: string, status?: string) =>
+    apiClient<{ success: boolean; data: any[] }>('/api/booking/doctor/appointments', {
+      method: 'GET',
+      params: status
+        ? { doctorId, status: status.toUpperCase() }
+        : { doctorId },
+    }),
+
+  // Accept a session
+  acceptSession: (sessionId: string) =>
+    apiClient<{ success: boolean; data: any }>(`/api/booking/doctor/appointments/${sessionId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'CONFIRMED' }),
+    }),
+
+  // Reject a session
+  rejectSession: (sessionId: string) =>
+    apiClient<{ success: boolean; data: any }>(`/api/booking/doctor/appointments/${sessionId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'CANCELLED' }),
+    }),
+
+  // Reschedule a session
+  rescheduleSession: (sessionId: string, data: { booking_date: string; start_time: string; end_time: string }) =>
+    apiClient<{ success: boolean; data: any }>(`/api/booking/doctor/appointments/${sessionId}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        date: data.booking_date,
+        startTime: data.start_time,
+        endTime: data.end_time,
+      }),
+    }),
+
+  // Get rules for a branch
+  getDoctorBranchAvailability: (branchId: string) =>
+    apiClient<{ success: boolean; data: any[] }>(`/api/booking/doctor/branches/${branchId}/availability`, {
+      method: 'GET',
+    }),
+
+  // Replace all branch rules in one request
+  replaceDoctorBranchAvailability: (
+    branchId: string,
+    data: { doctorId: string; rules: Array<{ dayOfWeek: number; startTime: string; endTime: string; slotDurationMinutes: number }> }
+  ) =>
+    apiClient<{ success: boolean; data: any[] }>(`/api/booking/doctor/branches/${branchId}/availability`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Get branch availability overrides (block-out and extra)
+  getDoctorBranchOverrides: (branchId: string) =>
+    apiClient<{ success: boolean; data: any[] }>(`/api/booking/doctor/branches/${branchId}/overrides`, {
+      method: 'GET',
+    }),
+
+  // Create a block-out/extra override for a branch
+  createDoctorBranchOverride: (
+    branchId: string,
+    data: { date: string; type: 'BLOCK' | 'EXTRA'; startTime?: string; endTime?: string; reason?: string }
+  ) =>
+    apiClient<{ success: boolean; data: any }>(`/api/booking/doctor/branches/${branchId}/overrides`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete override
+  deleteDoctorBranchOverride: (branchId: string, overrideId: string) =>
+    apiClient<{ success: boolean; message: string }>(`/api/booking/doctor/branches/${branchId}/overrides/${overrideId}`, {
+      method: 'DELETE',
+    }),
+
+  // Get doctor availability for public booking (New booking service)
+  getDoctorAvailabilityForBooking: (_doctorId: string, branchId: string) =>
+    apiClient<{ success: boolean; data: any[] }>(`/api/booking/public/branches/${branchId}/availability-week`, {
+      method: 'GET',
+    }),
+
+  // Get doctor branches for booking (New booking service)
+  getDoctorBranchesForBooking: (doctorId: string) =>
+    apiClient<{ success: boolean; data: any }>(`/api/booking/public/doctors/${doctorId}`, {
+      method: 'GET',
+    }),
+  getMyAppointments: (patientId: string) =>
+      apiClient<{ success: boolean; data: any[] }>('/api/booking/public/appointments/my', {
+        method: 'GET',
+        params: { patientId },
+      }),
+  // Create a booking (New booking service)
+  createBooking: (data: {
+    doctor_id: string
+    branch_id: string
+    patient_id: string
+    booking_date: string
+    start_time: string
+    end_time: string
+    reason?: string
+    notes?: string
+  }) =>
+    apiClient<{ success: boolean; data: any }>('/api/booking/public/appointments', {
+      method: 'POST',
+      body: JSON.stringify({
+        branchId: data.branch_id,
+        patientId: data.patient_id,
+        date: data.booking_date,
+        startTime: data.start_time,
+        endTime: data.end_time,
+        notes: data.notes || data.reason
+      }),
     }),
 }

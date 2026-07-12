@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Local cache of any user chat-service might need to render — synced via RabbitMQ,
+// never written to directly by any other service.
+model User {
+  id        String   @id
+  name      String
+  photoUrl  String?  @map("photo_url")
+  role      String
+  about     String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model ChatRoom {
+  id        String     @id @default(uuid())
+  userAId   String     @map("user_a_id")
+  userBId   String     @map("user_b_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  state     RoomState?
+  messages  Message[]
+
+  @@unique([userAId, userBId])
+  @@map("chat_rooms")
+}
+
+model RoomState {
+  roomId                   String   @id @map("room_id")
+  room                      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  messageCountBeforeUnlock  Int      @default(0) @map("message_count_before_unlock")
+  isUnlocked                Boolean  @default(false) @map("is_unlocked")
+  blockedBy                 String?  @map("blocked_by")
+
+  @@map("room_states")
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  roomId    String    @map("room_id")
+  room      ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId  String    @map("sender_id")
+  type      String
+  content   String?
+  mediaUrl  String?   @map("media_url")
+  mediaSize Int?      @map("media_size")
+  createdAt DateTime  @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+
+  @@index([roomId, createdAt])
+  @@map("messages")
+}

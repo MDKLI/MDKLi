@@ -5,8 +5,37 @@ import { ClinicProfile } from '../entity/ClinicProfile';
 import { PharmacyProfile } from '../entity/PharmacyProfile';
 import { Branch } from '../entity/Branch';
 import { DoctorBranchInvitation } from '../entity/DoctorBranchInvitation';
+import { DoctorBranch } from '../entity/DoctorBranch';
 import { rabbitMQService } from './rabbitmq.service';
 import logger from '../utility/logger';
+import { PatientProfile } from '../entity/PatientProfile';
+
+export async function publishUserCreated(userId: string): Promise<void> {
+  try {
+    const userRepo = AppDataSource.getRepository(User);
+    const patientRepo = AppDataSource.getRepository(PatientProfile);
+
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      logger.warn(`User ${userId} not found for publishing event`);
+      return;
+    }
+
+    const patientProfile = await patientRepo.findOne({ where: { user: { id: userId } } });
+
+    const eventData = {
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      full_name: patientProfile?.full_name || null
+    };
+
+    await rabbitMQService.publishUserCreated(eventData);
+    logger.info(`Published user.created event: ${userId}`);
+  } catch (error) {
+    logger.error(`Failed to publish user.created event: ${userId}`, error);
+  }
+}
 
 // Publish doctor events
 export async function publishDoctorCreated(doctorId: string): Promise<void> {
@@ -22,10 +51,27 @@ export async function publishDoctorCreated(doctorId: string): Promise<void> {
       return;
     }
 
-    // Get branches
     const branchRepo = AppDataSource.getRepository(Branch);
-    const branches = await branchRepo.find({
+    const doctorBranchRepo = AppDataSource.getRepository(DoctorBranch);
+
+    const privateBranches = await branchRepo.find({
       where: { user: { id: doctor.user.id } }
+    });
+
+    const doctorBranchLinks = await doctorBranchRepo.find({
+      where: { doctorId: doctor.id },
+      relations: ['branch']
+    });
+
+    const facilityBranches = doctorBranchLinks
+      .map(link => link.branch)
+      .filter(Boolean);
+
+    const seenIds = new Set<string>();
+    const branches = [...privateBranches, ...facilityBranches].filter(b => {
+      if (seenIds.has(b.id)) return false;
+      seenIds.add(b.id);
+      return true;
     });
 
     const eventData = {
@@ -257,7 +303,8 @@ export async function publishBranchCreated(branchId: string, userId: string): Pr
       area: branch.area,
       address: branch.address,
       phone_numbers: branch.phone_numbers,
-      consultation_fee: branch.consultation_fee
+      consultation_fee: branch.consultation_fee,
+      media_urls: branch.media_urls ?? []
     });
     logger.info(`Published branch.created event: ${branchId}`);
   } catch (error) {
@@ -279,7 +326,8 @@ export async function publishBranchUpdated(branchId: string, userId: string): Pr
       area: branch.area,
       address: branch.address,
       phone_numbers: branch.phone_numbers,
-      consultation_fee: branch.consultation_fee
+      consultation_fee: branch.consultation_fee,
+      media_urls: branch.media_urls ?? []
     });
     logger.info(`Published branch.updated event: ${branchId}`);
   } catch (error) {
@@ -336,5 +384,27 @@ export async function publishInvitationRejected(invitationId: string): Promise<v
     logger.info(`Published invitation.rejected event: ${invitationId}`);
   } catch (error) {
     logger.error(`Failed to publish invitation.rejected event: ${invitationId}`, error);
+  }
+}
+
+export async function publishAllData(): Promise<void> {
+  try {
+    logger.info('Publishing all data for resync...');
+    
+    const branchRepo = AppDataSource.getRepository(Branch);
+    const branches = await branchRepo.find({ relations: ['user'] });
+    for (const b of branches) {
+      await publishBranchUpdated(b.id, b.user.id);
+    }
+    
+    const doctorRepo = AppDataSource.getRepository(Doctor);
+    const doctors = await doctorRepo.find({ relations: ['user'] });
+    for (const d of doctors) {
+      await publishDoctorUpdated(d.id);
+    }
+    
+    logger.info(`Resync complete: ${branches.length} branches, ${doctors.length} doctors`);
+  } catch (error) {
+    logger.error('Failed to publish all data:', error);
   }
 }

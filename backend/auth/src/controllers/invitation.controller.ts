@@ -55,11 +55,10 @@ export const findDoctors = async (req: Request, res: Response): Promise<void> =>
     // Search for doctors
     const doctorsQuery = doctorRepo()
       .createQueryBuilder('doctor')
-      .leftJoinAndSelect('doctor.user', 'user')
-      .where('doctor.is_active = :isActive', { isActive: true });
+      .leftJoinAndSelect('doctor.user', 'user');
 
     if (query) {
-      doctorsQuery.andWhere(
+      doctorsQuery.where(
         '(user.email ILIKE :query OR doctor.full_name ILIKE :query)',
         { query: `%${query}%` }
       );

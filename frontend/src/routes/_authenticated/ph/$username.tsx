@@ -8,9 +8,13 @@ import { Separator } from '@/components/ui/separator'
 import { MapPin, Phone, Clock, CheckCircle, ArrowLeft, Building2 } from 'lucide-react'
 import { searchApi } from '@/lib/search-api'
 import { toast } from 'sonner'
+import { MessageCircle } from 'lucide-react'
+import { chatApi } from '@/lib/chat-api'
+import { WishlistButton } from '@/components/wishlist-button'
 
 interface PharmacyDetails {
   id: string
+  user_id?: string
   facility_name: string
   facility_type: string
   description: string | null
@@ -30,8 +34,10 @@ export const Route = createFileRoute('/_authenticated/ph/$username')({
 
 function PharmacyDetailPage() {
   const { username } = Route.useParams()
+  const navigate = Route.useNavigate()
   const [pharmacy, setPharmacy] = useState<PharmacyDetails | null>(null)
   const [loading, setLoading] = useState(true)
+  const [startingChat, setStartingChat] = useState(false)
 
   useEffect(() => {
     fetchPharmacyDetails()
@@ -41,11 +47,13 @@ function PharmacyDetailPage() {
     try {
       setLoading(true)
       // Search for pharmacy by name (since we don't have username in search db yet)
-      const data = await searchApi.searchFacilities('*', { 
+      const data = await searchApi.searchFacilities('*', {
         facility_role: 'pharmacy',
-        limit: 100 
+        limit: 100
       })
-      
+
+      // Find pharmacy by matching username with facility_name or user_id
+      // Find pharmacy by matching username with facility_name or user_id
       // Find pharmacy by matching username with facility_name or user_id
       const found = data.data?.find((p: any) => 
         p.facility_name?.toLowerCase() === username?.toLowerCase() ||
@@ -62,6 +70,22 @@ function PharmacyDetailPage() {
       toast.error('Failed to load pharmacy details')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleChat = async () => {
+    if (!pharmacy) return
+    setStartingChat(true)
+    try {
+      const targetId = pharmacy.user_id || pharmacy.id
+      const result = await chatApi.openRoomWith(targetId)
+      if (result.data) {
+        navigate({ to: '/chats', search: { room: result.data.id } as any })
+      } else {
+        toast.error(result.error || 'Failed to start chat')
+      }
+    } finally {
+      setStartingChat(false)
     }
   }
 
@@ -115,21 +139,35 @@ function PharmacyDetailPage() {
 
             {/* Pharmacy Info */}
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{pharmacy.facility_name}</h1>
-                {pharmacy.status === 'verified' ? (
-                  <Badge className="bg-green-500">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Pending
-                  </Badge>
-                )}
-              </div>
-              
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold">{pharmacy.facility_name}</h1>
+              {pharmacy.status === 'verified' ? (
+                <Badge className="bg-green-500">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Verified
+                </Badge>
+              ) : (
+                <Badge variant="secondary">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Pending
+                </Badge>
+              )}
+              <WishlistButton
+                id={pharmacy.id}
+                type="pharmacy"
+                name={pharmacy.facility_name}
+                subtitle={pharmacy.facility_type || ''}
+                imageUrl={pharmacy.photo_url || undefined}
+                url={`/ph/${pharmacy.username || pharmacy.id}`}
+                variant="outline"
+                size="icon"
+                className="ml-auto"
+              />
+              <Button onClick={handleChat} disabled={startingChat} size="sm">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {startingChat ? 'Starting...' : 'Chat'}
+              </Button>
+            </div>
               {pharmacy.facility_type && (
                 <Badge variant="outline" className="mb-4">
                   {pharmacy.facility_type}
@@ -294,3 +332,6 @@ function PharmacyDetailPage() {
     </div>
   )
 }
+
+
+

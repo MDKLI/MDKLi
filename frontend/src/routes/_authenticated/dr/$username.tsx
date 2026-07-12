@@ -7,10 +7,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Phone, Clock, CheckCircle, ArrowLeft, Building2, Stethoscope, Award, User } from 'lucide-react'
 import { searchApi } from '@/lib/search-api'
+import { bookingApi } from '@/lib/api'
+import { DoctorBooking } from '@/components/booking/doctor-booking'
+import { WishlistButton } from '@/components/wishlist-button'
 import { toast } from 'sonner'
+import { ImageViewer } from '@/components/image-viewer'
+import { MessageCircle } from 'lucide-react'
+import { chatApi } from '@/lib/chat-api'
 
 interface DoctorDetails {
   id: string
+  user_id?: string
   full_name: string
   title: string | null
   specialty: string | null
@@ -36,7 +43,17 @@ export const Route = createFileRoute('/_authenticated/dr/$username')({
 function DoctorDetailPage() {
   const { username } = Route.useParams()
   const [doctor, setDoctor] = useState<DoctorDetails | null>(null)
+  const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerImages, setViewerImages] = useState<string[]>([])
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const openImageViewer = (images: string[], index: number) => {
+    setViewerImages(images)
+    setViewerIndex(index)
+    setViewerOpen(true)
+  }
 
   useEffect(() => {
     fetchDoctorDetails()
@@ -45,19 +62,14 @@ function DoctorDetailPage() {
   const fetchDoctorDetails = async () => {
     try {
       setLoading(true)
-      // Search for doctor by name
-      const data = await searchApi.searchDoctors('*', { 
-        limit: 100 
-      })
-      
-      // Find doctor by matching username with full_name or user_id
-      const found = data.data?.find((d: any) => 
+      const data = await searchApi.searchDoctors('*', { limit: 100 })
+      const found = data.data?.find((d: any) =>
         d.full_name?.toLowerCase().replace(/\s+/g, '-') === username?.toLowerCase() ||
         d.id === username
       )
-      
       if (found) {
         setDoctor({ ...found, username })
+        await fetchBranchesFromBooking(found.user_id)
       } else {
         toast.error('Doctor not found')
       }
@@ -68,9 +80,38 @@ function DoctorDetailPage() {
       setLoading(false)
     }
   }
+  const navigate = Route.useNavigate()
+  const [startingChat, setStartingChat] = useState(false)
 
-  // Get first branch for display
-  const firstBranch = doctor?.branches?.[0]
+  const handleChat = async () => {
+    if (!doctor) return
+    setStartingChat(true)
+    try {
+      const targetId = doctor.user_id || doctor.id
+      const result = await chatApi.openRoomWith(targetId)
+      if (result.data) {
+        navigate({ to: '/chats', search: { room: result.data.id } as any })
+      } else {
+        toast.error(result.error || 'Failed to start chat')
+      }
+    } finally {
+      setStartingChat(false)
+    }
+  }
+  const fetchBranchesFromBooking = async (doctorId: string) => {
+    try {
+      const response = await bookingApi.getDoctorBranchesForBooking(doctorId)
+      if (!response.data?.success || !response.data?.data?.branches || !Array.isArray(response.data.data.branches)) {
+        setBranches([])
+        return
+      }
+      setBranches(response.data.data.branches)
+    } catch (error) {
+      setBranches([])
+    }
+  }
+
+  const firstBranch = branches.length > 0 ? branches[0] : null
 
   if (loading) {
     return (
@@ -109,36 +150,40 @@ function DoctorDetailPage() {
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Doctor Photo */}
             <Avatar className="h-32 w-32 rounded-xl flex-shrink-0">
-              <AvatarImage 
-                src={doctor.photo_url || undefined} 
-                className="rounded-xl object-cover"
-              />
+              <AvatarImage src={doctor.photo_url || undefined} className="rounded-xl object-cover" />
               <AvatarFallback className="text-4xl rounded-xl bg-primary text-white">
                 {doctor.full_name?.charAt(0).toUpperCase() || 'D'}
               </AvatarFallback>
             </Avatar>
 
-            {/* Doctor Info */}
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{doctor.full_name}</h1>
                 <Badge variant="secondary">
                   {doctor.verification_status === 'verified' ? (
-                    <>
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
-                    </>
+                    <><CheckCircle className="h-3 w-3 mr-1" />Verified</>
                   ) : (
-                    <>
-                      <Clock className="h-3 w-3 mr-1" />
-                      Pending
-                    </>
+                    <><Clock className="h-3 w-3 mr-1" />Pending</>
                   )}
                 </Badge>
+                <WishlistButton
+                  id={doctor.id}
+                  type="doctor"
+                  name={doctor.full_name}
+                  subtitle={doctor.specialty || doctor.title || ''}
+                  imageUrl={doctor.photo_url || undefined}
+                  url={`/dr/${doctor.username || doctor.id}`}
+                  variant="outline"
+                  size="icon"
+                  className="ml-auto"
+                />
+                <Button onClick={handleChat} disabled={startingChat} size="sm">
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  {startingChat ? 'Starting...' : 'Chat'}
+                </Button>
               </div>
-              
+
               {doctor.title && (
                 <p className="text-lg text-muted-foreground mb-2">{doctor.title}</p>
               )}
@@ -146,13 +191,10 @@ function DoctorDetailPage() {
               {doctor.specialty && (
                 <div className="flex items-center gap-2 mb-4">
                   <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                  <Badge variant="outline">
-                    {doctor.specialty}
-                  </Badge>
+                  <Badge variant="outline">{doctor.specialty}</Badge>
                 </div>
               )}
 
-              {/* Contact Info */}
               <div className="flex flex-wrap gap-4">
                 {doctor.phone_number && (
                   <div className="flex items-center gap-2 text-sm">
@@ -187,11 +229,9 @@ function DoctorDetailPage() {
       <div className="grid md:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="md:col-span-2 space-y-6">
-          {/* About Section */}
+          {/* About */}
           <Card>
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>About</CardTitle></CardHeader>
             <CardContent>
               {doctor.description ? (
                 <p>{doctor.description}</p>
@@ -203,9 +243,7 @@ function DoctorDetailPage() {
 
           {/* Personal Information */}
           <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {doctor.title && (
@@ -236,78 +274,90 @@ function DoctorDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Booking */}
+          <DoctorBooking doctorId={doctor.id} branches={branches} />
+
           {/* Practice Locations */}
           <Card>
             <CardHeader>
-              <CardTitle>Practice Locations ({doctor.branches?.length || 0})</CardTitle>
+              <CardTitle>Practice Locations ({branches.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              {doctor.branches?.length > 0 ? (
+              {branches.length > 0 ? (
                 <div className="space-y-4">
-                  {doctor.branches.map((branch: any, index: number) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        {/* Facility Photo */}
-                        {branch.facility_photo_url ? (
-                          <Avatar className="h-12 w-12 rounded-lg flex-shrink-0">
-                            <AvatarImage src={branch.facility_photo_url} className="rounded-lg object-cover" />
-                            <AvatarFallback className="rounded-lg bg-muted">
-                              <Building2 className="h-5 w-5" />
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
+                  {branches.map((branch: any, index: number) => {
+                    const mediaUrls: string[] = branch.mediaUrls || branch.media_urls || []
+                    return (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex items-start gap-3">
                           <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                             <Building2 className="h-5 w-5 text-muted-foreground" />
                           </div>
-                        )}
-                        
-                        <div className="flex-1">
-                          {/* Facility Name */}
-                          <h3 className="font-semibold">
-                            {branch.facility_name || branch.name || `Location ${index + 1}`}
-                          </h3>
-                          
-                          {/* Branch Type */}
-                          {branch.branch_type && (
-                            <Badge 
-                              variant={branch.branch_type === 'private_practice' ? 'default' : 'secondary'} 
-                              className="mt-1 text-xs"
-                            >
-                              {branch.branch_type === 'private_practice' && 'Private Practice'}
-                              {branch.branch_type === 'hospital' && 'Hospital'}
-                              {branch.branch_type === 'clinic' && 'Medical Center'}
-                              {branch.branch_type === 'center' && 'Medical Center'}
-                            </Badge>
-                          )}
-                          
-                          {/* Location */}
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {[branch.area, branch.city].filter(Boolean).join(', ') || 'Location not specified'}
-                          </p>
-                          
-                          {/* Address */}
-                          {branch.address && (
-                            <p className="text-sm text-muted-foreground mt-1">{branch.address}</p>
-                          )}
-                          
-                          {/* Phone */}
-                          {branch.phone_numbers?.length > 0 && (
-                            <div className="flex items-center gap-2 mt-2 text-sm">
-                              <Phone className="h-3 w-3" />
-                              <span>{branch.phone_numbers.join(', ')}</span>
-                            </div>
-                          )}
-                          
-                          {/* Consultation Fee */}
-                          {branch.consultation_fee && (
+
+                          <div className="flex-1">
+                            <h3 className="font-semibold">
+                              {branch.facility_name || branch.name || `Location ${index + 1}`}
+                            </h3>
+
+                            {branch.branch_type && (
+                              <Badge
+                                variant={branch.branch_type === 'private_practice' ? 'default' : 'secondary'}
+                                className="mt-1 text-xs"
+                              >
+                                {branch.branch_type === 'private_practice' && 'Private Practice'}
+                                {branch.branch_type === 'hospital' && 'Hospital'}
+                                {branch.branch_type === 'clinic' && 'Medical Center'}
+                                {branch.branch_type === 'center' && 'Medical Center'}
+                              </Badge>
+                            )}
+
                             <p className="text-sm text-muted-foreground mt-1">
-                              Consultation Fee: {branch.consultation_fee} EGP
+                              {[branch.area, branch.city].filter(Boolean).join(', ') || 'Location not specified'}
                             </p>
-                          )}
+
+                            {branch.address && (
+                              <p className="text-sm text-muted-foreground mt-1">{branch.address}</p>
+                            )}
+
+                            {(branch.phone_numbers || branch.phoneNumbers)?.length > 0 && (
+                              <div className="flex items-center gap-2 mt-2 text-sm">
+                                <Phone className="h-3 w-3" />
+                                <span>{(branch.phone_numbers || branch.phoneNumbers).join(', ')}</span>
+                              </div>
+                            )}
+
+                            {(branch.consultation_fee || branch.consultationFee) && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Consultation Fee: {branch.consultation_fee || branch.consultationFee} EGP
+                              </p>
+                            )}
+
+                            {/* Branch Media Gallery */}
+                            {mediaUrls.length > 0 && (
+                              <div className="mt-3">
+                                <p className="text-xs text-muted-foreground mb-2">Branch Photos:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {mediaUrls.map((url: string, imgIndex: number) => (
+                                    <div
+                                      key={imgIndex}
+                                      className="relative cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => openImageViewer(mediaUrls, imgIndex)}
+                                    >
+                                      <img
+                                        src={url}
+                                        alt={`Branch photo ${imgIndex + 1}`}
+                                        className="w-20 h-20 object-cover rounded-lg border"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-muted-foreground italic">No practice locations listed</p>
@@ -318,11 +368,8 @@ function DoctorDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Contact Card */}
           <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {doctor.phone_number ? (
                 <div className="flex items-center gap-3">
@@ -335,9 +382,9 @@ function DoctorDetailPage() {
               ) : (
                 <p className="text-muted-foreground italic">No phone number</p>
               )}
-              
+
               <Separator />
-              
+
               {(doctor.city || doctor.area) && (
                 <div className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -349,7 +396,7 @@ function DoctorDetailPage() {
                   </div>
                 </div>
               )}
-              
+
               {firstBranch?.address && (
                 <>
                   <Separator />
@@ -378,11 +425,8 @@ function DoctorDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Status Card */}
           <Card>
-            <CardHeader>
-              <CardTitle>Verification Status</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Verification Status</CardTitle></CardHeader>
             <CardContent>
               {doctor.verification_status === 'verified' ? (
                 <div className="flex items-center gap-3 text-green-600">
@@ -405,6 +449,14 @@ function DoctorDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Image Viewer */}
+      <ImageViewer
+        images={viewerImages}
+        initialIndex={viewerIndex}
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
     </div>
   )
 }
