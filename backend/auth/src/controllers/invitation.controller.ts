@@ -9,6 +9,7 @@ import { ClinicProfile } from '../entity/ClinicProfile';
 import { Branch } from '../entity/Branch';
 import { User } from '../entity/User';
 import { InvitationStatus } from '../enums/invitation-status.enum';
+import { rabbitMQService } from '../services/rabbitmq.service';
 import logger from '../utility/logger';
 
 const invitationRepo = () => AppDataSource.getRepository(DoctorBranchInvitation);
@@ -267,6 +268,7 @@ export const getFacilityInvitations = async (req: Request, res: Response): Promi
         id: invitation.id,
         doctor: {
           id: invitation.doctor.id,
+          userId: invitation.doctor.user?.id,
           fullName: invitation.doctor.full_name,
           email: invitation.doctor.user?.email,
           specialty: invitation.doctor.specialty,
@@ -438,6 +440,14 @@ export const acceptInvitation = async (req: Request, res: Response): Promise<voi
     await queryRunner.manager.save(invitation);
 
     await queryRunner.commitTransaction();
+
+    for (const invitationBranch of invitation.invitationBranches) {
+      await rabbitMQService.publishDoctorBranchAssigned({
+        doctorUserId: userId,
+        branchId: invitationBranch.branchId,
+        consultationFee: invitationBranch.consultationFee,
+      });
+    }
 
     res.json({
       success: true,
@@ -739,6 +749,17 @@ export const kickDoctorFromBranch = async (req: Request, res: Response): Promise
 
     await queryRunner.commitTransaction();
 
+    const doctorUser = await queryRunner.manager.findOne(Doctor, {
+      where: { id: doctorId },
+      relations: ['user'],
+    });
+    if (doctorUser?.user) {
+      await rabbitMQService.publishDoctorBranchRemoved({
+        doctorUserId: doctorUser.user.id,
+        branchId,
+      });
+    }
+
     res.json({
       success: true,
       message: 'Doctor removed from branch successfully',
@@ -783,6 +804,11 @@ export const leaveBranch = async (req: Request, res: Response): Promise<void> =>
       res.status(404).json({ message: 'You are not assigned to this branch' });
       return;
     }
+
+    await rabbitMQService.publishDoctorBranchRemoved({
+      doctorUserId: userId,
+      branchId,
+    });
 
     res.json({
       success: true,
@@ -886,6 +912,7 @@ export const getBranchDoctors = async (req: Request, res: Response): Promise<voi
     // Format the response
     const doctors = doctorBranches.map((db) => ({
       id: db.doctor.id,
+      userId: db.doctor.user?.id,
       fullName: db.doctor.full_name,
       email: db.doctor.user?.email,
       specialty: db.doctor.specialty,

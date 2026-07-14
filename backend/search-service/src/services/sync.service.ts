@@ -26,6 +26,7 @@ export async function syncDoctorToMeilisearch(doctor: SearchableDoctor): Promise
       clinic_type: doctor.clinic_type,
       verification_status: doctor.verification_status,
       created_at: doctor.created_at,
+      is_blocked: doctor.is_blocked,
     }
 
     await index.addDocuments([meiliDoc])
@@ -65,6 +66,7 @@ export async function syncFacilityToMeilisearch(facility: SearchableFacility): P
       status: facility.status,
       facility_role: facility.facility_role,
       created_at: facility.created_at,
+      is_blocked: facility.is_blocked,
     }
 
     await index.addDocuments([meiliDoc])

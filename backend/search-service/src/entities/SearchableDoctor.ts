@@ -53,6 +53,9 @@ export class SearchableDoctor {
   @Column({ type: 'varchar', default: 'pending' })
   verification_status!: string
 
+  @Column({ type: 'boolean', default: false })
+  is_blocked!: boolean
+
   @CreateDateColumn()
   created_at!: Date
 

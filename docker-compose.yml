@@ -220,6 +220,28 @@ services:
       timeout: 10s
       retries: 3
 
+  admin-service:
+    build: ./backend/admin-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/admindb
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - AUTH_SERVICE_URL=http://auth-service:3000
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Main Frontend (Vite - serves both landing and dashboard)
   frontend:
     build: ./frontend

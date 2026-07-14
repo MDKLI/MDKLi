@@ -6,6 +6,7 @@ import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { AdminSidebar } from '@/features/admin/admin-sidebar'
 import { SkipToMain } from '@/components/skip-to-main'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -18,8 +19,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { auth } = useAuthStore()
   const hasFetchedProfile = useRef(false)
 
-  // Fetch user profile data when authenticated layout mounts
-  // Only fetch once to avoid infinite loops
   useEffect(() => {
     if (auth.isAuthenticated() && auth.user && !hasFetchedProfile.current) {
       hasFetchedProfile.current = true
@@ -27,12 +26,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     }
   }, [auth.user])
 
+  const isAdmin = auth.user?.role === 'admin' || auth.user?.role === 'superadmin'
+
   return (
     <SearchProvider>
       <LayoutProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
           <SkipToMain />
-          <AppSidebar />
+          {isAdmin ? <AdminSidebar /> : <AppSidebar />}
           <SidebarInset
             className={cn(
               '@container/content',

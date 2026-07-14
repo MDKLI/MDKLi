@@ -21,6 +21,7 @@ model Doctor {
 
   // Relations
   branches      Branch[]
+  assignments   BranchAssignment[]
   appointments  Appointment[]
   settings      DoctorSettings?
 
@@ -30,7 +31,8 @@ model Doctor {
 // Branch entity - physical or virtual location under a doctor
 model Branch {
   id                String   @id @default(uuid())
-  doctorId          String   @map("doctor_id")
+  doctorId          String?  @map("doctor_id")
+  ownerUserId        String?  @map("owner_user_id") // facility owner's auth userId, when this branch belongs to a facility rather than a private-practice doctor
   name              String
   address           String?
   city              String?
@@ -48,7 +50,8 @@ model Branch {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   // Relations
-  doctor            Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  doctor            Doctor?                @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  assignments       BranchAssignment[]
   availabilityRules AvailabilityRule[]
   availabilityOverrides AvailabilityOverride[]
   appointments      Appointment[]
@@ -56,10 +59,29 @@ model Branch {
   @@map("branches")
 }
 
+// Which doctors work at a branch, and their fee there. For a private-practice branch
+// this mirrors Branch.doctorId (one row). For a facility branch, one row per invited doctor.
+model BranchAssignment {
+  id                String   @id @default(uuid())
+  branchId          String   @map("branch_id")
+  doctorId          String   @map("doctor_id")
+  consultationFee   Int?     @map("consultation_fee")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, doctorId])
+  @@map("branch_assignments")
+}
+
 // AvailabilityRule - recurring weekly schedule template
 model AvailabilityRule {
   id                  String  @id @default(uuid())
   branchId            String  @map("branch_id")
+  doctorId            String? @map("doctor_id") // null = legacy single-doctor branch rule
   dayOfWeek           Int     @map("day_of_week") // 0-6, Sunday=0
   startTime           String  @map("start_time") // "HH:MM" format
   endTime             String  @map("end_time")   // "HH:MM" format
@@ -78,6 +100,7 @@ model AvailabilityRule {
 model AvailabilityOverride {
   id        String              @id @default(uuid())
   branchId  String              @map("branch_id")
+  doctorId  String?             @map("doctor_id") // null = legacy single-doctor branch override
   date      DateTime            @db.Date
   type      AvailabilityOverrideType
   startTime String?             @map("start_time") // Optional for BLOCK type

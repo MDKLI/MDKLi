@@ -11,6 +11,9 @@ import {
   Mail,
   UserPlus,
   Users,
+  ShieldCheck,
+  BarChart3,
+  FileText,
 } from 'lucide-react'
 
 import { type SidebarData } from '../types'
@@ -68,6 +71,53 @@ export const sidebarData: SidebarData = {
         },
       ],
     },
+
+    {
+      title: 'Admin',
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/admin/dashboard',
+          icon: Home,
+        },
+        {
+          title: 'Verification',
+          url: '/admin/verification',
+          icon: ShieldCheck,
+        },
+        {
+          title: 'Chats',
+          url: '/chats',
+          icon: MessagesSquare,
+        },
+        {
+          title: 'Users',
+          url: '/admin/users',
+          icon: Users,
+        },
+        {
+          title: 'Appointments',
+          url: '/admin/appointments',
+          icon: CalendarClock,
+        },
+        {
+          title: 'Tickets',
+          url: '/admin/tickets',
+          icon: MessagesSquare,
+        },
+        {
+          title: 'Analytics',
+          url: '/admin/analytics',
+          icon: BarChart3,
+        },
+        {
+          title: 'Audit Logs',
+          url: '/admin/audit-logs',
+          icon: FileText,
+        },
+      ],
+    },
+
   ],
 }
 
@@ -75,6 +125,23 @@ export const sidebarData: SidebarData = {
 export function getProfileMenuItems(role: string | undefined) {
   const isDoctor = role === 'doctor'
   const isFacility = role === 'clinic_admin' || role === 'pharmacy_admin'
+  const isAdmin = role === 'admin' || role === 'superadmin'
+  
+  // Admin users get minimal profile menu - no Branches, no Wishlist
+  if (isAdmin) {
+    return [
+      {
+        title: 'Personal Info',
+        url: '/settings',
+        icon: User,
+      },
+      {
+        title: 'Account',
+        url: '/settings/account',
+        icon: Building2,
+      },
+    ]
+  }
   
   const items = [
     {
@@ -126,11 +193,9 @@ export function getDoctorSidebarItems(role: string | undefined) {
 // Helper function to get facility-specific sidebar items (hospitals/medical centers only)
 export function getFacilitySidebarItems(role: string | undefined) {
   const isFacility = role === 'clinic_admin'
-
   if (!isFacility) {
     return []
   }
-
   return [
     {
       title: 'Invite Doctor',
@@ -146,6 +211,11 @@ export function getFacilitySidebarItems(role: string | undefined) {
       title: 'Branch Doctors',
       url: '/branch-doctors',
       icon: Users,
+    },
+    {
+      title: 'Availability',
+      url: '/facility-availability',
+      icon: CalendarClock,
     },
   ]
 }

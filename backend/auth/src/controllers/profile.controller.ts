@@ -8,7 +8,7 @@ import { PharmacyProfile } from '../entity/PharmacyProfile';
 import { Branch } from '../entity/Branch';
 import { validationResult } from 'express-validator';
 import logger from '../utility/logger';
-import { publishBranchCreated, publishBranchUpdated, publishDoctorUpdated } from '../services/event-publisher.service';
+import { publishBranchCreated, publishBranchUpdated, publishDoctorUpdated, publishFacilityUpdated } from '../services/event-publisher.service';
 
 export const getMyProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -18,7 +18,7 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    let profile = null;
+    let profile: any = null;
     switch (user.role) {
       case UserRole.PATIENT:
         profile = await AppDataSource.getRepository(PatientProfile).findOne({
@@ -44,6 +44,22 @@ export const getMyProfile = async (req: Request, res: Response): Promise<void> =
           relations: ['user']
         });
         break;
+      case UserRole.ADMIN:
+      case UserRole.SUPER_ADMIN:
+        // Admins don't have a separate profile table, return basic user info
+        profile = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
+        break;
+      case UserRole.ADMIN:
+      case UserRole.SUPER_ADMIN:
+        res.status(403).json({ message: 'Admins cannot update profile via this endpoint' });
+        return;
       default:
         res.status(400).json({ message: 'Invalid user role' });
         return;
@@ -170,6 +186,9 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
         
         Object.assign(profile, updateData);
         await repo.save(profile);
+        publishFacilityUpdated(profile.id, 'clinic').catch(err => {
+          logger.error('Failed to publish facility.updated event:', err);
+        });
         
         // Handle branches if provided
         if (req.body.branches) {
@@ -245,6 +264,9 @@ export const updateMyProfile = async (req: Request, res: Response): Promise<void
         
         Object.assign(profile, updateData);
         await repo.save(profile);
+        publishFacilityUpdated(profile.id, 'pharmacy').catch(err => {
+          logger.error('Failed to publish facility.updated event:', err);
+        });
         
         // Handle branches if provided
         if (req.body.branches) {

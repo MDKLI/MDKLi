@@ -14,8 +14,9 @@ RUN apk add --no-cache openssl
 COPY package*.json ./
 RUN npm ci --only=production
 COPY prisma ./prisma/
+COPY scripts ./scripts/
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 RUN npx prisma generate
 EXPOSE 3005
-CMD ["node", "dist/app.js"]
+CMD ["sh", "-c", "node scripts/sync-users.js; node dist/app.js"]

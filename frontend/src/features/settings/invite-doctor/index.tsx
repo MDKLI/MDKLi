@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { invitationApi, profileApi } from '@/lib/api'
-import { Search, Loader2, UserPlus, MapPin, DollarSign } from 'lucide-react'
+import { Loader2, UserPlus, MapPin, DollarSign } from 'lucide-react'
+import { AdminSearchBar } from '@/components/admin-search-bar'
 
 interface Doctor {
   id: string
@@ -220,25 +221,16 @@ export function InviteDoctorPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Search for Doctor</Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter doctor email or full name..."
+                <div>
+                  <AdminSearchBar
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    onChange={setSearchQuery}
+                    onSearch={handleSearch}
+                    placeholder="Enter doctor email or full name..."
+                    isSearching={isSearching}
                   />
-                  <Button onClick={handleSearch} disabled={isSearching}>
-                    {isSearching ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                    <span className="ml-2">Search</span>
-                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Search by email or full name
-                </p>
+                <p className="text-sm text-muted-foreground">Search by email or full name</p>
               </div>
 
               {/* Search Results */}

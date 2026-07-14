@@ -38,6 +38,7 @@ export async function initializeIndexes() {
         'years_of_experience',
         'has_private_practice',
         'verification_status',
+        'is_blocked',
       ],
       sortableAttributes: [
         'full_name',
@@ -76,6 +77,7 @@ export async function initializeIndexes() {
         'status',
         'city',
         'area',
+        'is_blocked',
       ],
       sortableAttributes: [
         'facility_name',

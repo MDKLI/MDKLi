@@ -29,6 +29,7 @@ RUN apk add --no-cache openssl
 
 # Install production dependencies only
 COPY package*.json ./
+
 RUN npm ci --only=production
 
 # Copy prisma schema
@@ -38,6 +39,10 @@ COPY prisma ./prisma/
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copy sync scripts + entrypoint
+COPY scripts ./scripts
+RUN chmod +x ./scripts/docker-entrypoint.sh
+
 # Generate Prisma client for production
 RUN npx prisma generate
 
@@ -45,4 +50,4 @@ RUN npx prisma generate
 EXPOSE 3004
 
 # Start command
-CMD ["node", "dist/app.js"]
+CMD ["./scripts/docker-entrypoint.sh"]

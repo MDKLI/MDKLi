@@ -64,6 +64,9 @@ const startServer = async () => {
     rabbitMQConsumer.on('branch.deleted', eventHandlers.handleBranchDeleted)
     rabbitMQConsumer.on('invitation.accepted', eventHandlers.handleInvitationAccepted)
     rabbitMQConsumer.on('invitation.rejected', eventHandlers.handleInvitationRejected)
+    rabbitMQConsumer.on('user.blocked', eventHandlers.handleUserBlocked)
+    rabbitMQConsumer.on('user.unblocked', eventHandlers.handleUserUnblocked)
+    rabbitMQConsumer.on('user.deleted', eventHandlers.handleUserDeleted)
     logger.info('✅ Event handlers registered')
 
     // Start server

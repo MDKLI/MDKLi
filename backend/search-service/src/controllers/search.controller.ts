@@ -4,6 +4,7 @@ import { SearchableDoctor } from '../entities/SearchableDoctor'
 import { SearchableFacility } from '../entities/SearchableFacility'
 import { meiliClient, DOCTORS_INDEX, FACILITIES_INDEX } from '../config/meilisearch'
 import logger from '../utils/logger'
+import { Brackets } from 'typeorm';
 
 const doctorRepo = () => AppDataSource.getRepository(SearchableDoctor)
 const facilityRepo = () => AppDataSource.getRepository(SearchableFacility)
@@ -75,9 +76,11 @@ export const searchDoctors = async (req: Request, res: Response): Promise<void> 
     
     // Search by name, specialty, or description
     if (query && query !== '*') {
-      qb.where('doctor.full_name ILIKE :query', { query: `%${query}%` })
-        .orWhere('doctor.specialty ILIKE :query', { query: `%${query}%` })
-        .orWhere('doctor.description ILIKE :query', { query: `%${query}%` })
+      qb.andWhere(new Brackets(qb2 => {
+        qb2.where('doctor.full_name ILIKE :query', { query: `%${query}%` })
+          .orWhere('doctor.specialty ILIKE :query', { query: `%${query}%` })
+          .orWhere('doctor.description ILIKE :query', { query: `%${query}%` })
+      }))
     }
 
     // Add direct doctor filters
@@ -90,7 +93,7 @@ export const searchDoctors = async (req: Request, res: Response): Promise<void> 
     if (title && typeof title === 'string') {
       qb.andWhere('doctor.title = :title', { title })
     }
-
+    qb.andWhere('doctor.is_blocked = false')
     // Get all matching doctors - return ALL doctors (individuals), not facilities
     const doctors = await qb.getMany()
 
@@ -176,7 +179,7 @@ export const searchFacilities = async (req: Request, res: Response): Promise<voi
     if (otherFilters.facility_type && typeof otherFilters.facility_type === 'string') {
       qb.andWhere('facility.facility_type = :facility_type', { facility_type: otherFilters.facility_type })
     }
-
+    qb.andWhere('facility.is_blocked = false')
     // Get all matching facilities
     const facilities = await qb.getMany()
 

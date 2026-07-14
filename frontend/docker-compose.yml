@@ -18,3 +18,14 @@ services:
     build: .
     expose:
       - "4173"
+  admin:
+    build:
+      context: ./frontend/admin
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:3000
+    expose:
+      - "4174"
+    depends_on:
+      - auth-service

@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
-import { profileApi } from '@/lib/api'
 import { cities, getAreasByCity } from '@/data/cities'
 import { specialties } from '@/data/specialties'
 import { titles } from '@/data/titles'
@@ -1215,11 +1214,6 @@ function BranchesStep({
       toast.error('Please add at least one branch')
       return
     }
-    
-    // Save branches to profile
-    await profileApi.updateProfile({
-      branches: branches,
-    })
     onComplete()
   }
 

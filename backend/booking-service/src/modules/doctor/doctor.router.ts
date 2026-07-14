@@ -1,3 +1,4 @@
+import { rabbitMQClient } from '../../lib/rabbitmq'
 import { Router } from 'express'
 import { prisma } from '../../app'
 import { logger } from '../../utils/logger'
@@ -33,6 +34,62 @@ async function resolveDocitorId(rawId: string): Promise<string | null> {
   return doctor?.id || null
 }
 
+async function resolveBranchAccess(branchId: string, doctorId: string) {
+  const branch = await prisma.branch.findUnique({ where: { id: branchId } })
+  if (!branch) return { error: 'Branch not found' as const }
+
+  if (branch.doctorId === doctorId) {
+    return { branch, doctorId, scopeDoctorId: null as string | null, mode: 'owner' as const }
+  }
+
+  const assignment = await prisma.branchAssignment.findFirst({
+    where: { branchId, doctorId, isActive: true }
+  })
+  if (assignment) {
+    return { branch, doctorId, scopeDoctorId: doctorId, mode: 'assigned' as const }
+  }
+
+  return { error: 'This doctor is not assigned to this branch' as const }
+}
+
+async function findScheduleOverlap(
+  doctorId: string,
+  excludeBranchId: string,
+  newRules: Array<{ dayOfWeek: number; startTime: string; endTime: string }>
+): Promise<string | null> {
+  const [ownedBranches, assignments] = await Promise.all([
+    prisma.branch.findMany({ where: { doctorId, isActive: true }, select: { id: true, name: true } }),
+    prisma.branchAssignment.findMany({
+      where: { doctorId, isActive: true },
+      include: { branch: { select: { id: true, name: true, isActive: true } } }
+    })
+  ])
+
+  const otherBranches = [
+    ...ownedBranches.map(b => ({ id: b.id, name: b.name, scopeDoctorId: null as string | null })),
+    ...assignments
+      .filter(a => a.branch && a.branch.isActive)
+      .map(a => ({ id: a.branch.id, name: a.branch.name, scopeDoctorId: doctorId as string | null }))
+  ].filter(b => b.id !== excludeBranchId)
+
+  for (const other of otherBranches) {
+    const existingRules = await prisma.availabilityRule.findMany({
+      where: { branchId: other.id, doctorId: other.scopeDoctorId, isActive: true }
+    })
+
+    for (const existing of existingRules) {
+      for (const incoming of newRules) {
+        if (existing.dayOfWeek !== incoming.dayOfWeek) continue
+        const overlaps = incoming.startTime < existing.endTime && existing.startTime < incoming.endTime
+        if (overlaps) {
+          return `Overlaps with existing schedule at "${other.name}" on day ${incoming.dayOfWeek} (${existing.startTime}-${existing.endTime})`
+        }
+      }
+    }
+  }
+
+  return null
+}
 // GET /api/v1/doctor/branches
 router.get('/branches', requireDoctor, async (req: any, res, next) => {
   try {
@@ -42,23 +99,65 @@ router.get('/branches', requireDoctor, async (req: any, res, next) => {
     const doctorId = await resolveDocitorId(rawId)
     if (!doctorId) { res.status(404).json({ error: 'Doctor not found' }); return }
 
-    const branches = await prisma.branch.findMany({
-      where: { doctorId, isActive: true },
-      include: { _count: { select: { appointments: true } } },
-      orderBy: { createdAt: 'desc' }
-    })
+    // A doctor's full branch list is the union of two sources:
+    // 1. Private-practice branches they own directly (Branch.doctorId)
+    // 2. Facility branches they've been invited to and accepted (BranchAssignment)
+    // A branch can only ever be in one of these two sets, never both, so no
+    // dedup is needed — but we still merge+sort them into a single list.
+    const [ownedBranches, assignments] = await Promise.all([
+      prisma.branch.findMany({
+        where: { doctorId, isActive: true },
+        include: { _count: { select: { appointments: true } } },
+      }),
+      prisma.branchAssignment.findMany({
+        where: { doctorId, isActive: true },
+        include: {
+          branch: {
+            include: { _count: { select: { appointments: true } } },
+          },
+        },
+      }),
+    ])
+
+    const assignedBranches = assignments
+      .filter((a) => a.branch && a.branch.isActive)
+      .map((a) => ({
+        ...a.branch,
+        // Facility-set fee for this specific doctor at this branch, when present,
+        // overrides the branch's own default consultationFee.
+        consultationFee: a.consultationFee ?? a.branch.consultationFee,
+        isFacilityBranch: true,
+      }))
+
+    const branches = [
+      ...ownedBranches.map((b) => ({ ...b, isFacilityBranch: false })),
+      ...assignedBranches,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     res.json({ success: true, data: branches })
   } catch (error) { next(error) }
 })
 
 // GET /api/v1/doctor/branches/:branchId/availability
+// Optional ?doctorId= scopes to a specific facility-assigned doctor's rules.
+// Omitted (legacy/private-practice calls) returns the branch's own rules.
 router.get('/branches/:branchId/availability', requireDoctor, async (req: any, res, next) => {
   try {
     const { branchId } = req.params
+    const rawDoctorId = req.user?.doctorId || req.query.doctorId as string | undefined
+
+    let scopeDoctorId: string | null = null
+    if (rawDoctorId) {
+      const doctorId = await resolveDocitorId(String(rawDoctorId))
+      if (!doctorId) { res.status(404).json({ error: 'Doctor not found' }); return }
+
+      const access = await resolveBranchAccess(branchId, doctorId)
+      if ('error' in access) { res.status(403).json({ error: access.error }); return }
+      scopeDoctorId = access.scopeDoctorId
+    }
 
     const rules = await prisma.availabilityRule.findMany({
-      where: { branchId, isActive: true },
+      where: { branchId, doctorId: scopeDoctorId, isActive: true },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }]
     })
 
@@ -125,31 +224,42 @@ router.put('/branches/:branchId/availability', requireDoctor, async (req: any, r
       }
     }
 
-    const branch = await prisma.branch.findUnique({
-      where: { id: branchId },
-      select: { id: true, doctorId: true },
-    })
-    if (!branch) {
-      res.status(404).json({ error: 'Branch not found' })
+    const rawId = req.user?.doctorId || req.body.doctorId || req.body.doctor_id || req.query.doctorId
+    if (!rawId) {
+      res.status(401).json({ error: 'doctorId is required' })
       return
     }
 
-    const rawId = req.user?.doctorId || req.body.doctorId || req.body.doctor_id || req.query.doctorId
-    if (rawId) {
-      const doctorId = await resolveDocitorId(String(rawId))
-      if (!doctorId) {
-        res.status(404).json({ error: 'Doctor not found' })
-        return
-      }
-      if (branch.doctorId !== doctorId) {
-        res.status(403).json({ error: 'You cannot update availability for this branch' })
-        return
-      }
+    const doctorId = await resolveDocitorId(String(rawId))
+    if (!doctorId) {
+      res.status(404).json({ error: 'Doctor not found' })
+      return
+    }
+
+    const access = await resolveBranchAccess(branchId, doctorId)
+    if ('error' in access) {
+      res.status(403).json({ error: access.error })
+      return
+    }
+    const { scopeDoctorId } = access
+
+    const overlapError = await findScheduleOverlap(
+      doctorId,
+      branchId,
+      rules.map((r) => ({
+        dayOfWeek: Number(r.dayOfWeek),
+        startTime: r.startTime,
+        endTime: r.endTime,
+      }))
+    )
+    if (overlapError) {
+      res.status(409).json({ error: overlapError })
+      return
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.availabilityRule.updateMany({
-        where: { branchId, isActive: true },
+        where: { branchId, doctorId: scopeDoctorId, isActive: true },
         data: { isActive: false },
       })
 
@@ -157,6 +267,7 @@ router.put('/branches/:branchId/availability', requireDoctor, async (req: any, r
         await tx.availabilityRule.createMany({
           data: rules.map((rule) => ({
             branchId,
+            doctorId: scopeDoctorId,
             dayOfWeek: Number(rule.dayOfWeek),
             startTime: rule.startTime,
             endTime: rule.endTime,
@@ -168,7 +279,7 @@ router.put('/branches/:branchId/availability', requireDoctor, async (req: any, r
     })
 
     const updatedRules = await prisma.availabilityRule.findMany({
-      where: { branchId, isActive: true },
+      where: { branchId, doctorId: scopeDoctorId, isActive: true },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     })
 
@@ -195,13 +306,23 @@ router.post('/branches/:branchId/overrides', requireDoctor, async (req: any, res
   try {
     const { branchId } = req.params
     const { date, type, startTime, endTime, reason } = req.body
+    const rawId = req.user?.doctorId || req.body.doctorId || req.query.doctorId
 
     if (!date || !type) { res.status(400).json({ error: 'Missing required fields' }); return }
     if (!['BLOCK', 'EXTRA'].includes(type)) { res.status(400).json({ error: 'type must be BLOCK or EXTRA' }); return }
     if (type === 'EXTRA' && (!startTime || !endTime)) { res.status(400).json({ error: 'EXTRA overrides require startTime and endTime' }); return }
 
+    let scopeDoctorId: string | null = null
+    if (rawId) {
+      const doctorId = await resolveDocitorId(String(rawId))
+      if (!doctorId) { res.status(404).json({ error: 'Doctor not found' }); return }
+      const access = await resolveBranchAccess(branchId, doctorId)
+      if ('error' in access) { res.status(403).json({ error: access.error }); return }
+      scopeDoctorId = access.scopeDoctorId
+    }
+
     const override = await prisma.availabilityOverride.create({
-      data: { branchId, date: new Date(date), type, startTime: startTime || null, endTime: endTime || null, reason: reason || null }
+      data: { branchId, doctorId: scopeDoctorId, date: new Date(date), type, startTime: startTime || null, endTime: endTime || null, reason: reason || null }
     })
 
     res.status(201).json({ success: true, data: override })
@@ -212,8 +333,19 @@ router.post('/branches/:branchId/overrides', requireDoctor, async (req: any, res
 router.get('/branches/:branchId/overrides', requireDoctor, async (req: any, res, next) => {
   try {
     const { branchId } = req.params
+    const rawId = req.user?.doctorId || req.query.doctorId as string | undefined
+
+    let scopeDoctorId: string | null = null
+    if (rawId) {
+      const doctorId = await resolveDocitorId(String(rawId))
+      if (!doctorId) { res.status(404).json({ error: 'Doctor not found' }); return }
+      const access = await resolveBranchAccess(branchId, doctorId)
+      if ('error' in access) { res.status(403).json({ error: access.error }); return }
+      scopeDoctorId = access.scopeDoctorId
+    }
+
     const overrides = await prisma.availabilityOverride.findMany({
-      where: { branchId },
+      where: { branchId, doctorId: scopeDoctorId },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     })
 
@@ -225,6 +357,7 @@ router.get('/branches/:branchId/overrides', requireDoctor, async (req: any, res,
 router.delete('/branches/:branchId/overrides/:overrideId', requireDoctor, async (req: any, res, next) => {
   try {
     const { branchId, overrideId } = req.params
+
     const existing = await prisma.availabilityOverride.findFirst({
       where: { id: overrideId, branchId },
     })
@@ -296,6 +429,19 @@ router.patch('/appointments/:id/status', requireDoctor, async (req: any, res, ne
     })
 
     logger.info(`Appointment ${id} status updated to ${status}`)
+
+    rabbitMQClient
+      .publishEvent('appointment.status_changed', {
+        id: appointment.id,
+        doctorId: appointment.doctorId,
+        branchId: appointment.branchId,
+        patientId: appointment.patientId,
+        status: appointment.status,
+        date: appointment.date,
+        consultationFee: appointment.branch?.consultationFee ?? null,
+      })
+      .catch((err) => logger.error('Failed to publish appointment.status_changed:', err))
+
     res.json({ success: true, data: appointment })
   } catch (error) { next(error) }
 })

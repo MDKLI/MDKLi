@@ -40,6 +40,7 @@ export class RabbitMQClient {
     await this.channel.bindQueue(queue.queue, this.EXCHANGE_NAME, 'doctor.*')
     await this.channel.bindQueue(queue.queue, this.EXCHANGE_NAME, 'branch.*')
     await this.channel.bindQueue(queue.queue, this.EXCHANGE_NAME, 'profile.*')
+    await this.channel.bindQueue(queue.queue, this.EXCHANGE_NAME, 'doctor_branch.*')
     
     // Start consuming
     await this.channel.consume(queue.queue, this.handleMessage.bind(this))
@@ -72,6 +73,12 @@ export class RabbitMQClient {
           break
         case 'branch.deleted':
           await this.handleBranchDeleted(content)
+          break
+        case 'doctor_branch.assigned':
+          await this.handleDoctorBranchAssigned(content)
+          break
+        case 'doctor_branch.removed':
+          await this.handleDoctorBranchRemoved(content)
           break
         default:
           logger.debug(`Unhandled routing key: ${routingKey}`)
@@ -194,16 +201,13 @@ private async handleDoctorEvent(data: any): Promise<void> {
         return
       }
       
-      // Find doctor by userId
+      // A branch's owner may be a private-practice doctor OR a facility.
+      // Only set Branch.doctorId when the owner is actually a doctor; otherwise
+      // this is a facility branch, and per-doctor access is tracked via BranchAssignment.
       const doctor = await prisma.doctor.findFirst({
         where: { userId: authUserId }
       })
-      
-      if (!doctor) {
-        logger.error(`Doctor not found for branch ${id}, userId: ${authUserId}`)
-        return
-      }
-      
+
     await prisma.branch.upsert({
       where: { id },
       update: {
@@ -215,11 +219,13 @@ private async handleDoctorEvent(data: any): Promise<void> {
         consultationFee: consultation_fee ? parseInt(consultation_fee) : null,
         mediaUrls: media_urls || [],
         isVirtual: isVirtual || false,
-        isActive: true
+        isActive: true,
+        ...(doctor ? { doctorId: doctor.id } : { ownerUserId: authUserId })
       },
       create: {
         id,
-        doctorId: doctor.id,
+        doctorId: doctor?.id || null,
+        ownerUserId: doctor ? null : authUserId,
         name: name || 'Unknown Branch',
         address: address || null,
         city: city || null,
@@ -232,8 +238,7 @@ private async handleDoctorEvent(data: any): Promise<void> {
         timezone: 'UTC'
       }
     })
-      
-      logger.info(`Synced branch: ${id} for doctor: ${doctor.id}`)
+      logger.info(`Synced branch: ${id} (owner: ${doctor ? `doctor ${doctor.id}` : `facility user ${authUserId}`})`)
     } catch (error) {
       logger.error('Error syncing branch:', error)
     }
@@ -251,6 +256,65 @@ private async handleDoctorEvent(data: any): Promise<void> {
       logger.info(`Deactivated branch: ${id}`)
     } catch (error) {
       logger.error('Error deactivating branch:', error)
+    }
+  }
+
+  // Doctor accepted a facility invitation for a branch
+  private async handleDoctorBranchAssigned(data: any): Promise<void> {
+    try {
+      const { doctorUserId, branchId, consultationFee } = data
+
+      const doctor = await prisma.doctor.findFirst({ where: { userId: doctorUserId } })
+      const branch = await prisma.branch.findUnique({ where: { id: branchId } })
+
+      if (!doctor) {
+        logger.warn(`doctor_branch.assigned: doctor not found for userId ${doctorUserId} (branch ${branchId})`)
+        return
+      }
+      if (!branch) {
+        logger.warn(`doctor_branch.assigned: branch ${branchId} not found`)
+        return
+      }
+
+      await prisma.branchAssignment.upsert({
+        where: { branchId_doctorId: { branchId, doctorId: doctor.id } },
+        update: {
+          consultationFee: consultationFee ?? null,
+          isActive: true
+        },
+        create: {
+          branchId,
+          doctorId: doctor.id,
+          consultationFee: consultationFee ?? null,
+          isActive: true
+        }
+      })
+
+      logger.info(`Assigned doctor ${doctor.id} to branch ${branchId}`)
+    } catch (error) {
+      logger.error('Error handling doctor_branch.assigned:', error)
+    }
+  }
+
+  // Doctor kicked or left a facility branch
+  private async handleDoctorBranchRemoved(data: any): Promise<void> {
+    try {
+      const { doctorUserId, branchId } = data
+
+      const doctor = await prisma.doctor.findFirst({ where: { userId: doctorUserId } })
+      if (!doctor) {
+        logger.warn(`doctor_branch.removed: doctor not found for userId ${doctorUserId}`)
+        return
+      }
+
+      await prisma.branchAssignment.updateMany({
+        where: { branchId, doctorId: doctor.id },
+        data: { isActive: false }
+      })
+
+      logger.info(`Removed doctor ${doctor.id} from branch ${branchId}`)
+    } catch (error) {
+      logger.error('Error handling doctor_branch.removed:', error)
     }
   }
 
