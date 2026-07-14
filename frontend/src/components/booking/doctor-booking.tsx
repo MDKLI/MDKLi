@@ -70,6 +70,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
   const [notes, setNotes] = useState('')
   
   const user = useAuthStore(state => state.auth.user)
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
   
   // Auto-fill patient info from logged in user
   useEffect(() => {
@@ -117,6 +118,11 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
   }
 
   const handleBookSession = async () => {
+    if (isAdmin) {
+      toast.error('Admin accounts cannot book appointments')
+      return
+    }
+
     if (!selectedBranch || !selectedDate || !selectedSlot) return
     
     if (!patientName.trim()) {
@@ -130,6 +136,8 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
         doctor_id: doctorId,
         branch_id: selectedBranch.id,
         patient_id: user?.id || '',
+        patient_email: patientEmail || user?.email,
+        patient_name: patientName,
         booking_date: selectedDate,
         start_time: selectedSlot.start_time,
         end_time: selectedSlot.end_time,
@@ -165,22 +173,32 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
     }
   }
 
-  if (branches.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">No branches available for booking</p>
-        </CardContent>
-      </Card>
-    )
-  }
+  if (isAdmin) {
+      return (
+        <Card className="mt-6">
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">Admin accounts cannot book appointments</p>
+          </CardContent>
+        </Card>
+      )
+    }
 
-  return (
-    <>
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Book Appointment</CardTitle>
-        </CardHeader>
+    if (branches.length === 0) {
+      return (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">No branches available for booking</p>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Book Appointment</CardTitle>
+          </CardHeader>
         <CardContent className="space-y-6">
           {/* Branch Selection */}
           {!selectedBranch ? (

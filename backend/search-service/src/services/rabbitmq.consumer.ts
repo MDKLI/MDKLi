@@ -64,20 +64,22 @@ class RabbitMQConsumer {
     })
 
     // Bind to all relevant routing keys
-    const routingKeys = [
-      'doctor.created',
-      'doctor.updated',
-      'doctor.deleted',
-      'facility.created',
-      'facility.updated',
-      'facility.deleted',
-      'branch.created',
-      'branch.updated',
-      'branch.deleted',
-      'invitation.accepted',
-      'invitation.rejected'
-    ]
-
+  const routingKeys = [
+    'doctor.created',
+    'doctor.updated',
+    'doctor.deleted',
+    'facility.created',
+    'facility.updated',
+    'facility.deleted',
+    'branch.created',
+    'branch.updated',
+    'branch.deleted',
+    'invitation.accepted',
+    'invitation.rejected',
+    'user.blocked',
+    'user.unblocked',
+    'user.deleted'
+  ]
     for (const routingKey of routingKeys) {
       await this.channel.bindQueue(queue.queue, 'auth.events', routingKey)
     }

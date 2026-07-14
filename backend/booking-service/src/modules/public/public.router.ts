@@ -1,3 +1,4 @@
+import { rabbitMQClient } from '../../lib/rabbitmq'
 import { Router } from 'express'
 import { prisma } from '../../app'
 import { requireAuth, AuthedRequest } from '../../middleware/auth.middleware'
@@ -6,6 +7,47 @@ import { logger } from '../../utils/logger'
 import moment from 'moment-timezone'
 
 const router = Router()
+
+// GET /api/v1/public/facilities/:facilityUserId/branches - Public: branches + assigned doctors for a facility
+router.get('/facilities/:facilityUserId/branches', async (req, res, next) => {
+  try {
+    const { facilityUserId } = req.params
+
+    const branches = await prisma.branch.findMany({
+      where: { ownerUserId: facilityUserId, isActive: true },
+      orderBy: { name: 'asc' }
+    })
+
+    const branchesWithDoctors = await Promise.all(
+      branches.map(async (branch) => {
+        const assignments = await prisma.branchAssignment.findMany({
+          where: { branchId: branch.id, isActive: true },
+          include: { doctor: true }
+        })
+
+        return {
+          id: branch.id,
+          name: branch.name,
+          city: branch.city,
+          area: branch.area,
+          address: branch.address,
+          doctors: assignments
+            .filter(a => a.doctor && a.doctor.isActive)
+            .map(a => ({
+              id: a.doctor.id,
+              fullName: a.doctor.name,
+              specialty: a.doctor.specialization,
+              photoUrl: a.doctor.avatarUrl,
+            }))
+        }
+      })
+    )
+
+    res.json({ success: true, data: branchesWithDoctors })
+  } catch (error) {
+    next(error)
+  }
+})
 
 // GET /api/v1/public/doctors - List all active doctors
 router.get('/doctors', async (req, res, next) => {
@@ -62,12 +104,33 @@ router.get('/doctors/:doctorId', async (req, res, next) => {
       res.status(404).json({ error: 'Doctor not found' })
       return
     }
-    
-    logger.info(`API: Returning doctor ${doctorId} with ${doctor.branches.length} branches:`, doctor.branches.map(b => b.name))
+
+    // Owned (private-practice) branches come from the relation above.
+    // Facility branches this doctor was invited to and accepted come from
+    // BranchAssignment instead — Branch.doctorId is never set for those.
+    const assignments = await prisma.branchAssignment.findMany({
+      where: { doctorId: doctor.id, isActive: true },
+      include: { branch: true }
+    })
+
+    const assignedBranches = assignments
+      .filter(a => a.branch && a.branch.isActive)
+      .map(a => ({
+        ...a.branch,
+        consultationFee: a.consultationFee ?? a.branch.consultationFee,
+        isFacilityBranch: true
+      }))
+
+    const allBranches = [
+      ...doctor.branches.map(b => ({ ...b, isFacilityBranch: false })),
+      ...assignedBranches
+    ]
+
+    logger.info(`API: Returning doctor ${doctorId} with ${allBranches.length} branches (${doctor.branches.length} owned, ${assignedBranches.length} facility):`, allBranches.map(b => b.name))
     
     res.json({
       success: true,
-      data: doctor
+      data: { ...doctor, branches: allBranches }
     })
   } catch (error) {
     next(error)
@@ -166,7 +229,7 @@ router.get('/branches/:branchId/availability', async (req, res, next) => {
 // POST /api/v1/public/appointments - Book an appointment (patient only)
 router.post('/appointments', async (req, res, next) => {
   try {
-    const { branchId, date, startTime, endTime, notes, patientId: userId } = req.body
+    const { branchId, date, startTime, endTime, notes, patientId: userId, doctorId: requestedDoctorId } = req.body
     
     // Validate required fields
     if (!branchId || !date || !startTime || !endTime || !userId) {
@@ -177,14 +240,22 @@ router.post('/appointments', async (req, res, next) => {
       return
     }
 
-    // Resolve the real patient row id from the auth userId
-    const patient = await prisma.patient.findUnique({
+    // Resolve the real patient row id from the auth userId, creating a local
+    // record on first booking if the RabbitMQ sync hasn't caught up yet
+    let patient = await prisma.patient.findUnique({
       where: { userId }
     })
 
     if (!patient) {
-      res.status(404).json({ error: 'Patient profile not found. Please complete your profile before booking.' })
-      return
+      const { patientEmail, patientName } = req.body
+      patient = await prisma.patient.create({
+        data: {
+          userId,
+          email: patientEmail || `${userId}@unknown.local`,
+          name: patientName || 'Patient'
+        }
+      })
+      logger.info(`Auto-created patient record for userId ${userId} on first booking`)
     }
 
     const patientId = patient.id
@@ -198,6 +269,28 @@ router.post('/appointments', async (req, res, next) => {
     
     if (!branch || !branch.isActive) {
       res.status(404).json({ error: 'Branch not found' })
+      return
+    }
+
+    // Resolve which doctor this booking is for. Legacy private-practice branches
+    // have exactly one doctor (branch.doctorId). Facility branches can have several
+    // doctors via BranchAssignment, so the caller must specify doctorId explicitly.
+    let resolvedDoctorId: string | null = branch.doctorId
+
+    if (requestedDoctorId) {
+      const assignment = await prisma.branchAssignment.findFirst({
+        where: { branchId, doctorId: requestedDoctorId, isActive: true }
+      })
+      if (assignment) {
+        resolvedDoctorId = requestedDoctorId
+      } else if (branch.doctorId !== requestedDoctorId) {
+        res.status(400).json({ error: 'This doctor is not assigned to this branch' })
+        return
+      }
+    }
+
+    if (!resolvedDoctorId) {
+      res.status(400).json({ error: 'doctorId is required to book this branch' })
       return
     }
     
@@ -239,10 +332,11 @@ router.post('/appointments', async (req, res, next) => {
     }
     
     // Create appointment
+    // Create appointment
     const appointment = await prisma.appointment.create({
       data: {
         branchId,
-        doctorId: branch.doctorId,
+        doctorId: resolvedDoctorId,
         patientId,
         date: new Date(date),
         startTime,
@@ -257,10 +351,20 @@ router.post('/appointments', async (req, res, next) => {
       }
     })
     
-    logger.info(`Appointment created: ${appointment.id} for patient ${patientId}`)
-    
-    // TODO: Emit appointment.booked event to RabbitMQ
-    
+logger.info(`Appointment created: ${appointment.id} for patient ${patientId}`)
+
+    rabbitMQClient
+      .publishEvent('appointment.created', {
+        id: appointment.id,
+        doctorId: appointment.doctorId,
+        branchId: appointment.branchId,
+        patientId: appointment.patientId,
+        status: appointment.status,
+        date: appointment.date,
+        consultationFee: branch.consultationFee ?? null,
+      })
+      .catch((err) => logger.error('Failed to publish appointment.created:', err))
+
     res.status(201).json({
       success: true,
       data: appointment
@@ -350,8 +454,17 @@ router.patch('/appointments/:id/cancel', requireAuth, async (req: AuthedRequest,
       }
     })
     
-    // TODO: Emit appointment.cancelled event
-    
+    rabbitMQClient
+      .publishEvent('appointment.status_changed', {
+        id: updated.id,
+        doctorId: updated.doctorId,
+        branchId: updated.branchId,
+        patientId: updated.patientId,
+        status: updated.status,
+        date: updated.date,
+      })
+      .catch((err) => logger.error('Failed to publish appointment.status_changed:', err))
+
     res.json({
       success: true,
       data: updated

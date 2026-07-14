@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:3006'
 
 import { getCookie, removeCookie } from './cookies'
 
@@ -36,6 +37,64 @@ export async function apiClient<T>(
     const searchParams = new URLSearchParams(options.params)
     url += `?${searchParams.toString()}`
   }
+
+  async function adminApiClient<T>(
+    endpoint: string,
+    options: RequestInit & { params?: Record<string, string> } = {}
+  ): Promise<ApiResponse<T>> {
+    let url = `${ADMIN_API_URL}${endpoint}`
+
+    if (options.params) {
+      const searchParams = new URLSearchParams(options.params)
+      url += `?${searchParams.toString()}`
+    }
+
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    }
+
+    const token = getCookie('thisisjustarandomstring')
+    if (token) {
+      try {
+        const parsedToken = JSON.parse(token)
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${parsedToken.accessToken || parsedToken}`,
+        }
+      } catch {
+        // Invalid token format, skip
+      }
+    }
+
+    try {
+      const response = await fetch(url, config)
+      const data = await response.json()
+
+      if (response.status === 401) {
+        handleSessionExpired()
+        return {
+          error: data.message || 'Session expired',
+        }
+      }
+
+      if (!response.ok) {
+        return {
+          error: data.error || data.message || 'An error occurred',
+        }
+      }
+
+      return { data }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Network error',
+      }
+    }
+  }
+  void adminApiClient
   
   const config: RequestInit = {
     headers: {
@@ -72,7 +131,64 @@ export async function apiClient<T>(
 
     if (!response.ok) {
       return {
-        error: data.message || 'An error occurred',
+        error: data.error || data.message || 'An error occurred',
+      }
+    }
+
+    return { data }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Network error',
+    }
+  }
+}
+
+export async function adminApiClient<T>(
+  endpoint: string,
+  options: RequestInit & { params?: Record<string, string> } = {}
+): Promise<ApiResponse<T>> {
+  let url = `${ADMIN_API_URL}${endpoint}`
+
+  if (options.params) {
+    const searchParams = new URLSearchParams(options.params)
+    url += `?${searchParams.toString()}`
+  }
+
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  }
+
+  const token = getCookie(ACCESS_TOKEN_COOKIE)
+  if (token) {
+    try {
+      const parsedToken = JSON.parse(token)
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${parsedToken.accessToken || parsedToken}`,
+      }
+    } catch {
+      // Invalid token format, skip
+    }
+  }
+
+  try {
+    const response = await fetch(url, config)
+    const data = await response.json()
+
+    if (response.status === 401) {
+      handleSessionExpired()
+      return {
+        error: data.message || 'Session expired',
+      }
+    }
+
+    if (!response.ok) {
+      return {
+        error: data.error || data.message || 'An error occurred',
       }
     }
 
@@ -286,6 +402,69 @@ export const invitationApi = {
     }),
 }
 
+// Verification API
+export const verificationApi = {
+  // List doctors pending/verified/rejected
+  listDoctors: (status = 'pending', search?: string, page?: number) => {
+    const params: Record<string, string> = { status }
+    if (search) params.search = search
+    if (page !== undefined) params.page = String(page)
+    return adminApiClient(`/admin/verifications/doctors`, {
+      method: 'GET',
+      params,
+    })
+  },
+
+  // List facilities by category: 'hospitals' | 'medical-centers' | 'pharmacies'
+  listFacilities: (category: string, status = 'pending', search?: string, page?: number) => {
+    const params: Record<string, string> = { status }
+    if (search) params.search = search
+    if (page !== undefined) params.page = String(page)
+    return adminApiClient(`/admin/verifications/facilities/${category}`, {
+      method: 'GET',
+      params,
+    })
+  },
+
+
+  // Verify a doctor
+  verifyDoctor: (doctorId: string) =>
+    adminApiClient(`/admin/verifications/doctors/${doctorId}/verify`, { method: 'PATCH' }),
+
+  // Reject a doctor with optional reason
+  rejectDoctor: (doctorId: string, reason?: string) =>
+    adminApiClient(`/admin/verifications/doctors/${doctorId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // Verify a facility (pass facility id)
+  verifyFacility: (facilityId: string) =>
+    adminApiClient(`/admin/verifications/facilities/${facilityId}/verify`, { method: 'PATCH' }),
+
+  // Reject a facility with reason
+  rejectFacility: (facilityId: string, reason?: string) =>
+    adminApiClient(`/admin/verifications/facilities/${facilityId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // Block / Unblock users (admin actions)
+  blockUser: (userId: string) => adminApiClient(`/admin/verifications/users/${userId}/block`, { method: 'PATCH' }),
+  unblockUser: (userId: string) => adminApiClient(`/admin/verifications/users/${userId}/unblock`, { method: 'PATCH' }),
+
+  // List blocked users
+  listBlocked: (search?: string, page?: number) => {
+    const params: Record<string, string> = {}
+    if (search) params.search = search
+    if (page !== undefined) params.page = String(page)
+    return adminApiClient(`/admin/verifications/blocked`, {
+      method: 'GET',
+      params,
+    })
+  },
+}
+
 // Booking API
 export const bookingApi = {
   // Get doctor settings
@@ -343,10 +522,12 @@ export const bookingApi = {
       }),
     }),
 
-  // Get rules for a branch
-  getDoctorBranchAvailability: (branchId: string) =>
+  // Get rules for a branch. Pass doctorId when acting as a facility-assigned
+  // doctor (or on behalf of one); omit for a doctor's own private-practice branch.
+  getDoctorBranchAvailability: (branchId: string, doctorId?: string) =>
     apiClient<{ success: boolean; data: any[] }>(`/api/booking/doctor/branches/${branchId}/availability`, {
       method: 'GET',
+      params: doctorId ? { doctorId } : undefined,
     }),
 
   // Replace all branch rules in one request
@@ -360,15 +541,16 @@ export const bookingApi = {
     }),
 
   // Get branch availability overrides (block-out and extra)
-  getDoctorBranchOverrides: (branchId: string) =>
+  getDoctorBranchOverrides: (branchId: string, doctorId?: string) =>
     apiClient<{ success: boolean; data: any[] }>(`/api/booking/doctor/branches/${branchId}/overrides`, {
       method: 'GET',
+      params: doctorId ? { doctorId } : undefined,
     }),
 
   // Create a block-out/extra override for a branch
   createDoctorBranchOverride: (
     branchId: string,
-    data: { date: string; type: 'BLOCK' | 'EXTRA'; startTime?: string; endTime?: string; reason?: string }
+    data: { date: string; type: 'BLOCK' | 'EXTRA'; startTime?: string; endTime?: string; reason?: string; doctorId?: string }
   ) =>
     apiClient<{ success: boolean; data: any }>(`/api/booking/doctor/branches/${branchId}/overrides`, {
       method: 'POST',
@@ -392,6 +574,12 @@ export const bookingApi = {
     apiClient<{ success: boolean; data: any }>(`/api/booking/public/doctors/${doctorId}`, {
       method: 'GET',
     }),
+
+  // Public: get a facility's branches with their assigned doctors (no auth/ownership required)
+  getFacilityBranchesForPublic: (facilityUserId: string) =>
+    apiClient<{ success: boolean; data: any[] }>(`/api/booking/public/facilities/${facilityUserId}/branches`, {
+      method: 'GET',
+    }),
   getMyAppointments: (patientId: string) =>
       apiClient<{ success: boolean; data: any[] }>('/api/booking/public/appointments/my', {
         method: 'GET',
@@ -402,6 +590,8 @@ export const bookingApi = {
     doctor_id: string
     branch_id: string
     patient_id: string
+    patient_email?: string
+    patient_name?: string
     booking_date: string
     start_time: string
     end_time: string
@@ -412,7 +602,10 @@ export const bookingApi = {
       method: 'POST',
       body: JSON.stringify({
         branchId: data.branch_id,
+        doctorId: data.doctor_id,
         patientId: data.patient_id,
+        patientEmail: data.patient_email,
+        patientName: data.patient_name,
         date: data.booking_date,
         startTime: data.start_time,
         endTime: data.end_time,
@@ -420,3 +613,4 @@ export const bookingApi = {
       }),
     }),
 }
+export const api = apiClient

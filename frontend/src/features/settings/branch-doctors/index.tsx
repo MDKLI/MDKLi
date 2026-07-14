@@ -5,11 +5,13 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { invitationApi, profileApi } from '@/lib/api'
-import { Loader2, Users, MapPin, DollarSign, UserX } from 'lucide-react'
+import { chatApi } from '@/lib/chat-api'
+import { Loader2, Users, MapPin, DollarSign, UserX, MessageCircle } from 'lucide-react'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 interface BranchDoctor {
   id: string
+  userId?: string
   fullName: string
   email: string
   specialty: string
@@ -123,6 +125,23 @@ export function BranchDoctorsPage() {
     onConfirm: () => {},
   })
 
+  const [chattingId, setChattingId] = useState<string | null>(null)
+
+  const handleChatWithDoctor = async (doctor: BranchDoctor) => {
+    const targetId = doctor.userId || doctor.id
+    setChattingId(doctor.id)
+    try {
+      const result = await chatApi.openRoomWith(targetId)
+      if (result.data) {
+        window.location.href = `/chats?room=${result.data.id}`
+      } else {
+        toast.error(result.error || 'Failed to start chat')
+      }
+    } finally {
+      setChattingId(null)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -224,19 +243,34 @@ export function BranchDoctorsPage() {
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleKickDoctor(doctor.id, branch.id, branch.name)}
-                          disabled={processingId === `${doctor.id}-${branch.id}`}
-                        >
-                          {processingId === `${doctor.id}-${branch.id}` ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          ) : (
-                            <UserX className="h-4 w-4 mr-1" />
-                          )}
-                          Kick
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleChatWithDoctor(doctor)}
+                            disabled={chattingId === doctor.id}
+                          >
+                            {chattingId === doctor.id ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <MessageCircle className="h-4 w-4 mr-1" />
+                            )}
+                            Chat
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleKickDoctor(doctor.id, branch.id, branch.name)}
+                            disabled={processingId === `${doctor.id}-${branch.id}`}
+                          >
+                            {processingId === `${doctor.id}-${branch.id}` ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <UserX className="h-4 w-4 mr-1" />
+                            )}
+                            Kick
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

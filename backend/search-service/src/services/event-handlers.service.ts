@@ -12,7 +12,6 @@ export async function handleDoctorCreated(data: any): Promise<void> {
   try {
     logger.info(`Handling doctor.created event: ${data.id}`)
     
-    // Check if doctor already exists
     const existing = await doctorRepo().findOne({ where: { id: data.id } })
     if (existing) {
       logger.warn(`Doctor ${data.id} already exists, updating instead`)
@@ -33,7 +32,7 @@ export async function handleDoctorCreated(data: any): Promise<void> {
       phone_number: data.phone_number,
       city: data.city,
       area: data.area,
-      has_private_practice: data.has_private_practice || false,
+      has_private_practice: data.has_private_practice ?? false,
       clinic_name: data.clinic_name,
       clinic_type: data.clinic_type,
       branches: data.branches || [],
@@ -62,7 +61,6 @@ export async function handleDoctorUpdated(data: any): Promise<void> {
       return
     }
 
-    // Update fields
     existing.full_name = data.full_name || existing.full_name
     existing.title = data.title !== undefined ? data.title : existing.title
     existing.specialty = data.specialty !== undefined ? data.specialty : existing.specialty
@@ -73,7 +71,7 @@ export async function handleDoctorUpdated(data: any): Promise<void> {
     existing.phone_number = data.phone_number !== undefined ? data.phone_number : existing.phone_number
     existing.city = data.city !== undefined ? data.city : existing.city
     existing.area = data.area !== undefined ? data.area : existing.area
-    existing.has_private_practice = data.has_private_practice !== undefined ? data.has_private_practice : existing.has_private_practice
+    existing.has_private_practice = data.has_private_practice != null ? data.has_private_practice : (existing.has_private_practice ?? false)
     existing.clinic_name = data.clinic_name !== undefined ? data.clinic_name : existing.clinic_name
     existing.clinic_type = data.clinic_type !== undefined ? data.clinic_type : existing.clinic_type
     existing.branches = data.branches || existing.branches
@@ -89,7 +87,7 @@ export async function handleDoctorUpdated(data: any): Promise<void> {
   }
 }
 
-// Handle doctor deleted event
+// Handle doctor deleted event (hard delete from search – not affected by soft-block)
 export async function handleDoctorDeleted(data: any): Promise<void> {
   try {
     logger.info(`Handling doctor.deleted event: ${data.id}`)
@@ -112,7 +110,6 @@ export async function handleFacilityCreated(data: any): Promise<void> {
   try {
     logger.info(`Handling facility.created event: ${data.id}`)
     
-    // Check if facility already exists
     const existing = await facilityRepo().findOne({ where: { id: data.id } })
     if (existing) {
       logger.warn(`Facility ${data.id} already exists, updating instead`)
@@ -158,7 +155,6 @@ export async function handleFacilityUpdated(data: any): Promise<void> {
       return
     }
 
-    // Update fields
     existing.facility_name = data.facility_name !== undefined ? data.facility_name : existing.facility_name
     existing.facility_type = data.facility_type !== undefined ? data.facility_type : existing.facility_type
     existing.description = data.description !== undefined ? data.description : existing.description
@@ -181,7 +177,7 @@ export async function handleFacilityUpdated(data: any): Promise<void> {
   }
 }
 
-// Handle facility deleted event
+// Handle facility deleted event (hard delete)
 export async function handleFacilityDeleted(data: any): Promise<void> {
   try {
     logger.info(`Handling facility.deleted event: ${data.id}`)
@@ -199,19 +195,18 @@ export async function handleFacilityDeleted(data: any): Promise<void> {
   }
 }
 
-// Handle branch created event (for doctors)
+// --------- Branch handlers (unchanged) ---------
+
 export async function handleBranchCreated(data: any): Promise<void> {
   try {
     logger.info(`Handling branch.created event: ${data.id}`)
     
-    // Find the doctor this branch belongs to
     const doctor = await doctorRepo().findOne({ where: { user_id: data.user_id } })
     if (!doctor) {
       logger.warn(`Doctor not found for branch ${data.id}`)
       return
     }
 
-    // Add branch to doctor's branches
     const branches = doctor.branches || []
     const branchExists = branches.some((b: any) => b.id === data.id)
     
@@ -239,19 +234,16 @@ export async function handleBranchCreated(data: any): Promise<void> {
   }
 }
 
-// Handle branch updated event
 export async function handleBranchUpdated(data: any): Promise<void> {
   try {
     logger.info(`Handling branch.updated event: ${data.id}`)
     
-    // Find the doctor this branch belongs to
     const doctor = await doctorRepo().findOne({ where: { user_id: data.user_id } })
     if (!doctor) {
       logger.warn(`Doctor not found for branch ${data.id}`)
       return
     }
 
-    // Update the branch in doctor's branches
     const branches = doctor.branches || []
     const branchIndex = branches.findIndex((b: any) => b.id === data.id)
     
@@ -278,12 +270,10 @@ export async function handleBranchUpdated(data: any): Promise<void> {
   }
 }
 
-// Handle branch deleted event
 export async function handleBranchDeleted(data: any): Promise<void> {
   try {
     logger.info(`Handling branch.deleted event: ${data.id}`)
     
-    // Find all doctors that have this branch
     const doctors = await doctorRepo().find()
     
     for (const doctor of doctors) {
@@ -303,14 +293,11 @@ export async function handleBranchDeleted(data: any): Promise<void> {
   }
 }
 
-// Handle invitation accepted (doctor joined a facility)
+// --------- Invitation handlers (unchanged) ---------
+
 export async function handleInvitationAccepted(data: any): Promise<void> {
   try {
     logger.info(`Handling invitation.accepted event for doctor: ${data.doctor_id}`)
-    
-    // This will trigger a doctor update with new branches
-    // The auth service should send a doctor.updated event after accepting
-    // But we can also handle it here if needed
     logger.info(`Invitation accepted processed`)
   } catch (error) {
     logger.error(`Failed to handle invitation.accepted event:`, error)
@@ -318,7 +305,6 @@ export async function handleInvitationAccepted(data: any): Promise<void> {
   }
 }
 
-// Handle invitation rejected
 export async function handleInvitationRejected(data: any): Promise<void> {
   try {
     logger.info(`Handling invitation.rejected event for doctor: ${data.doctor_id}`)
@@ -327,4 +313,60 @@ export async function handleInvitationRejected(data: any): Promise<void> {
     logger.error(`Failed to handle invitation.rejected event:`, error)
     throw error
   }
+}
+
+// =====================
+//  Soft‑block / unblock / soft‑delete handlers
+//  (used for user.blocked / user.unblocked / user.deleted events)
+// =====================
+
+export async function handleUserBlocked(data: any): Promise<void> {
+  try {
+    logger.info(`Handling user.blocked event for userId: ${data.userId}`)
+    const doctor = await doctorRepo().findOne({ where: { user_id: data.userId } })
+    if (doctor) {
+      doctor.is_blocked = true
+      await doctorRepo().save(doctor)
+      await syncDoctorToMeilisearch(doctor)
+      logger.info(`✅ Doctor ${doctor.id} marked as blocked`)
+    }
+    const facility = await facilityRepo().findOne({ where: { user_id: data.userId } })
+    if (facility) {
+      facility.is_blocked = true
+      await facilityRepo().save(facility)
+      await syncFacilityToMeilisearch(facility)
+      logger.info(`✅ Facility ${facility.id} marked as blocked`)
+    }
+  } catch (error) {
+    logger.error(`Failed to handle user.blocked:`, error)
+    throw error
+  }
+}
+
+export async function handleUserUnblocked(data: any): Promise<void> {
+  try {
+    logger.info(`Handling user.unblocked event for userId: ${data.userId}`)
+    const doctor = await doctorRepo().findOne({ where: { user_id: data.userId } })
+    if (doctor) {
+      doctor.is_blocked = false
+      await doctorRepo().save(doctor)
+      await syncDoctorToMeilisearch(doctor)
+      logger.info(`✅ Doctor ${doctor.id} unblocked`)
+    }
+    const facility = await facilityRepo().findOne({ where: { user_id: data.userId } })
+    if (facility) {
+      facility.is_blocked = false
+      await facilityRepo().save(facility)
+      await syncFacilityToMeilisearch(facility)
+      logger.info(`✅ Facility ${facility.id} unblocked`)
+    }
+  } catch (error) {
+    logger.error(`Failed to handle user.unblocked:`, error)
+    throw error
+  }
+}
+
+export async function handleUserDeleted(data: any): Promise<void> {
+  // soft‑delete – same as block
+  await handleUserBlocked(data)
 }

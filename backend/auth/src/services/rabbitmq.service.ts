@@ -112,12 +112,12 @@ class RabbitMQService {
     return this.publishEvent('doctor.deleted', { id: doctorId })
   }
 
-  async publishUserCreated(user: any): Promise<boolean> {
-    return this.publishEvent('user.created', user)
+  async publishUserCreated(data: any): Promise<boolean> {
+    return this.publishEvent('user.created', data);
   }
 
-  async publishUserUpdated(user: any): Promise<boolean> {
-    return this.publishEvent('user.updated', user)
+  async publishUserUpdated(data: any): Promise<boolean> {
+    return this.publishEvent('user.updated', data);
   }
   // Facility events
   async publishFacilityCreated(facility: any): Promise<boolean> {
@@ -145,6 +145,15 @@ class RabbitMQService {
     return this.publishEvent('branch.deleted', { id: branchId })
   }
 
+  // Doctor-branch assignment events (facility invitations)
+  async publishDoctorBranchAssigned(data: any): Promise<boolean> {
+    return this.publishEvent('doctor_branch.assigned', data)
+  }
+
+  async publishDoctorBranchRemoved(data: any): Promise<boolean> {
+    return this.publishEvent('doctor_branch.removed', data)
+  }
+
   // Invitation events
   async publishInvitationAccepted(invitation: any): Promise<boolean> {
     return this.publishEvent('invitation.accepted', invitation)
@@ -152,6 +161,36 @@ class RabbitMQService {
 
   async publishInvitationRejected(invitation: any): Promise<boolean> {
     return this.publishEvent('invitation.rejected', invitation)
+  }
+
+  async publishUserBlocked(userId: string): Promise<void> {
+      await this.channel.publish(
+          'auth.events',
+          'user.blocked',
+          Buffer.from(JSON.stringify({ userId })),
+          { persistent: true }
+      );
+      logger.debug(`Published user.blocked event for ${userId}`);
+  }
+
+  async publishUserUnblocked(userId: string): Promise<void> {
+      await this.channel.publish(
+          'auth.events',
+          'user.unblocked',
+          Buffer.from(JSON.stringify({ userId })),
+          { persistent: true }
+      );
+      logger.debug(`Published user.unblocked event for ${userId}`);
+  }
+
+  async publishUserDeleted(userId: string): Promise<void> {
+      await this.channel.publish(
+          'auth.events',
+          'user.deleted',
+          Buffer.from(JSON.stringify({ userId })),
+          { persistent: true }
+      );
+      logger.debug(`Published user.deleted event for ${userId}`);
   }
 
   async close(): Promise<void> {

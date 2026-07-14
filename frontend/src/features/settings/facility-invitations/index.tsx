@@ -6,18 +6,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { invitationApi, profileApi } from '@/lib/api'
-import { Loader2, X, MapPin, DollarSign, Clock, UserPlus, Ban, UserX } from 'lucide-react'
+import { chatApi } from '@/lib/chat-api'
+import { useNavigate } from '@tanstack/react-router'
+import { Loader2, X, MapPin, DollarSign, Clock, UserPlus, Ban, UserX, MessageCircle } from 'lucide-react'
 
 interface Invitation {
   id: string
   doctor: {
     id: string
+    userId?: string
     fullName: string
     email: string
     specialty: string
     photoUrl: string
     title: string
   }
+
   branches: {
     id: string
     name: string
@@ -32,10 +36,27 @@ interface Invitation {
 }
 
 export function FacilityInvitationsPage() {
+  const navigate = useNavigate()
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [messagingId, setMessagingId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('pending')
+
+  const handleMessage = async (doctor: Invitation['doctor']) => {
+    const targetId = doctor.userId || doctor.id
+    setMessagingId(doctor.id)
+    try {
+      const result = await chatApi.openRoomWith(targetId)
+      if (result.data) {
+        navigate({ to: '/chats', search: { room: result.data.id } as any })
+      } else {
+        toast.error(result.error || 'Failed to start chat')
+      }
+    } finally {
+      setMessagingId(null)
+    }
+  }
 
   useEffect(() => {
     loadFacilityProfile()
@@ -256,6 +277,18 @@ export function FacilityInvitationsPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(invitation.status)}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMessage(invitation.doctor)}
+                              disabled={messagingId === invitation.doctor.id}
+                            >
+                              {messagingId === invitation.doctor.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MessageCircle className="h-4 w-4" />
+                              )}
+                            </Button>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(invitation.createdAt)}
                             </span>

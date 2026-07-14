@@ -39,6 +39,15 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry?: Date;
 
+  @Column({ default: false })
+  is_suspended: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  blocked_at?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deleted_at?: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

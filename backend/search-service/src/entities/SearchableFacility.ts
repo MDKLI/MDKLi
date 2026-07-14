@@ -41,6 +41,9 @@ export class SearchableFacility {
   @Column({ type: 'varchar', default: 'clinic' })
   facility_role!: string // 'clinic' or 'pharmacy'
 
+  @Column({ type: 'boolean', default: false })
+  is_blocked!: boolean
+
   @CreateDateColumn()
   created_at!: Date
 

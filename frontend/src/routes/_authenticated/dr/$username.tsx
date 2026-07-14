@@ -311,6 +311,19 @@ function DoctorDetailPage() {
                               </Badge>
                             )}
 
+                           {branch.isFacilityBranch && (branch.ownerUserId || branch.owner_user_id) && (
+                              <Link
+                                to="/fc/$username"
+                                params={{ username: branch.ownerUserId || branch.owner_user_id }}
+                                className="inline-block mt-2"
+                              >
+                                <Button size="sm" className="gap-1.5">
+                                  <Building2 className="h-3.5 w-3.5" />
+                                  View Facility
+                                </Button>
+                              </Link>
+                            )}
+
                             <p className="text-sm text-muted-foreground mt-1">
                               {[branch.area, branch.city].filter(Boolean).join(', ') || 'Location not specified'}
                             </p>

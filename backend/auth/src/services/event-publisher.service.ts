@@ -27,7 +27,9 @@ export async function publishUserCreated(userId: string): Promise<void> {
       id: user.id,
       role: user.role,
       email: user.email,
-      full_name: patientProfile?.full_name || null
+      full_name: patientProfile?.full_name || null,
+      is_suspended: (user as any).is_suspended || false,
+      deleted_at: (user as any).deleted_at || null
     };
 
     await rabbitMQService.publishUserCreated(eventData);
@@ -389,22 +391,76 @@ export async function publishInvitationRejected(invitationId: string): Promise<v
 
 export async function publishAllData(): Promise<void> {
   try {
-    logger.info('Publishing all data for resync...');
+    logger.info('Publishing all data for admin resync...');
     
-    const branchRepo = AppDataSource.getRepository(Branch);
-    const branches = await branchRepo.find({ relations: ['user'] });
-    for (const b of branches) {
-      await publishBranchUpdated(b.id, b.user.id);
+    const userRepo = AppDataSource.getRepository(User);
+    const users = await userRepo.find();
+    for (const u of users) {
+      await publishUserUpdated(u.id);
     }
     
     const doctorRepo = AppDataSource.getRepository(Doctor);
-    const doctors = await doctorRepo.find({ relations: ['user'] });
+    const doctors = await doctorRepo.find({ relations: ['user', 'clinic'] });
     for (const d of doctors) {
       await publishDoctorUpdated(d.id);
     }
+
+    const clinicRepo = AppDataSource.getRepository(ClinicProfile);
+    const clinics = await clinicRepo.find({ relations: ['user'] });
+    for (const c of clinics) {
+      await publishFacilityUpdated(c.id, 'clinic');
+    }
+
+    const pharmacyRepo = AppDataSource.getRepository(PharmacyProfile);
+    const pharmacies = await pharmacyRepo.find({ relations: ['user'] });
+    for (const p of pharmacies) {
+      await publishFacilityUpdated(p.id, 'pharmacy');
+    }
     
-    logger.info(`Resync complete: ${branches.length} branches, ${doctors.length} doctors`);
+    logger.info(`✅ Resync complete: ${users.length} users, ${doctors.length} doctors, ${clinics.length} clinics, ${pharmacies.length} pharmacies`);
   } catch (error) {
     logger.error('Failed to publish all data:', error);
   }
 }
+
+export async function publishUserUpdated(userId: string): Promise<void> {
+  try {
+    const userRepo = AppDataSource.getRepository(User);
+    const patientRepo = AppDataSource.getRepository(PatientProfile);
+
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) return;
+
+    const patientProfile = await patientRepo.findOne({ where: { user: { id: userId } } });
+
+    const eventData = {
+      id: user.id,
+      role: user.role,
+      email: user.email,
+      full_name: patientProfile?.full_name || null,
+      is_suspended: user.is_suspended,
+      blocked_at: user.blocked_at || null,
+      deleted_at: user.deleted_at || null
+    };
+
+    await rabbitMQService.publishUserUpdated(eventData);
+    logger.info(`Published user.updated event: ${userId}`);
+  } catch (error) {
+    logger.error(`Failed to publish user.updated event: ${userId}`, error);
+  }
+}
+
+export const publishUserBlocked = async (userId: string) => {
+    await rabbitMQService.publishUserBlocked(userId);
+    logger.info(`Published user.blocked event: ${userId}`);
+};
+
+export const publishUserUnblocked = async (userId: string) => {
+    await rabbitMQService.publishUserUnblocked(userId);
+    logger.info(`Published user.unblocked event: ${userId}`);
+};
+
+export const publishUserDeleted = async (userId: string) => {
+    await rabbitMQService.publishUserDeleted(userId);
+    logger.info(`Published user.deleted event: ${userId}`);
+};

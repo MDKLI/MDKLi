@@ -1,4 +1,6 @@
+import { publishUserBlocked, publishUserUnblocked } from '../services/event-publisher.service';
 import { Request, Response } from 'express';
+import { publishDoctorUpdated, publishFacilityUpdated, publishUserUpdated } from '../services/event-publisher.service';
 import { AppDataSource } from '../data-source';
 import { User } from '../entity/User';
 import { PatientProfile } from '../entity/PatientProfile';
@@ -89,6 +91,98 @@ export const updateUserProfile = async (req: Request, res: Response): Promise<vo
   }
 
   Object.assign(profile, updateData);
-  await repo.save(profile);
+  await (repo as any).save(profile);
   res.json({ message: 'Profile updated', profile });
+};
+
+export const verifyDoctor = async (req: Request, res: Response): Promise<void> => {
+  const { doctorId } = req.params;
+  const doctorRepo = AppDataSource.getRepository(Doctor);
+  const doctor = await doctorRepo.findOne({ where: { id: doctorId } });
+  if (!doctor) {
+    res.status(404).json({ message: 'Doctor not found' });
+    return;
+  }
+  doctor.is_active = true;
+  await doctorRepo.save(doctor);
+  await publishDoctorUpdated(doctor.id);
+  res.json({ message: 'Doctor verified', doctor });
+};
+
+export const rejectDoctor = async (req: Request, res: Response): Promise<void> => {
+  const { doctorId } = req.params;
+  const doctorRepo = AppDataSource.getRepository(Doctor);
+  const doctor = await doctorRepo.findOne({ where: { id: doctorId } });
+  if (!doctor) {
+    res.status(404).json({ message: 'Doctor not found' });
+    return;
+  }
+  doctor.is_active = false;
+  await doctorRepo.save(doctor);
+  await publishDoctorUpdated(doctor.id);
+  res.json({ message: 'Doctor rejected', doctor });
+};
+
+export const verifyFacility = async (req: Request, res: Response): Promise<void> => {
+  const { facilityId } = req.params;
+  const { type } = req.body; // 'clinic' | 'pharmacy'
+  const repo = type === 'pharmacy'
+    ? AppDataSource.getRepository(PharmacyProfile)
+    : AppDataSource.getRepository(ClinicProfile);
+  const facility = await repo.findOne({ where: { id: facilityId } });
+  if (!facility) {
+    res.status(404).json({ message: 'Facility not found' });
+    return;
+  }
+  facility.status = 'verified';
+  await (repo as any).save(facility);
+  await publishFacilityUpdated(facility.id, type === 'pharmacy' ? 'pharmacy' : 'clinic');
+  res.json({ message: 'Facility verified', facility });
+};
+
+export const rejectFacility = async (req: Request, res: Response): Promise<void> => {
+  const { facilityId } = req.params;
+  const { type } = req.body;
+  const repo = type === 'pharmacy'
+    ? AppDataSource.getRepository(PharmacyProfile)
+    : AppDataSource.getRepository(ClinicProfile);
+  const facility = await repo.findOne({ where: { id: facilityId } });
+  if (!facility) {
+    res.status(404).json({ message: 'Facility not found' });
+    return;
+  }
+  facility.status = 'suspended'; // no distinct "rejected" enum value exists — reusing 'suspended'
+  await (repo as any).save(facility);
+  await publishFacilityUpdated(facility.id, type === 'pharmacy' ? 'pharmacy' : 'clinic');
+  res.json({ message: 'Facility rejected', facility });
+};
+
+export const blockUser = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({ where: { id: userId } });
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+  user.is_suspended = true;
+  user.blocked_at = new Date();
+  await userRepo.save(user);
+  await publishUserBlocked(user.id);
+  res.json({ message: 'User blocked', user });
+};
+
+export const unblockUser = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({ where: { id: userId } });
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+  user.is_suspended = false;
+  user.blocked_at = null as any;
+  await userRepo.save(user);
+  await publishUserUnblocked(user.id);
+  res.json({ message: 'User unblocked', user });
 };
