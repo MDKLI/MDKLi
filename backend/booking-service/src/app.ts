@@ -15,6 +15,8 @@ import { branchRoutes } from './modules/branch/branch.router'
 import { availabilityRoutes } from './modules/availability/availability.router'
 import { appointmentRoutes } from './modules/appointment/appointment.router'
 import { publicRoutes } from './modules/public/public.router'
+import { paymentRoutes } from './modules/payment/payment.router'
+import { walletRoutes } from './modules/wallet/wallet.router'
 
 // Load environment variables
 dotenv.config()
@@ -54,6 +56,8 @@ app.use('/api/v1/branches', branchRoutes)
 app.use('/api/v1/availability', availabilityRoutes)
 app.use('/api/v1/appointments', appointmentRoutes)
 app.use('/api/v1/public', publicRoutes)
+app.use('/api/v1/payment', paymentRoutes)
+app.use('/api/v1/wallet', walletRoutes)
 
 // Error handling
 app.use(errorHandler)

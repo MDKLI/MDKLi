@@ -124,13 +124,14 @@ export function SettingsBranches() {
   
   const handleEditBranch = (branch: Branch) => {
     setIsEditing(true)
-    // Map city field properly
     const cityId = branch.city || branch.cityId || ''
     setEditingBranch({
       ...branch,
       city: cityId,
       cityId: cityId,
     })
+    setSelectedCity(cityId)
+    setPhoneNumbers(branch.phoneNumbers && branch.phoneNumbers.length > 0 ? branch.phoneNumbers : [''])
   }
 
   const handleLeaveBranch = async (branchId: string, facilityName?: string) => {
@@ -702,17 +703,18 @@ export function SettingsBranches() {
                 </Button>
               </div>
               
-              {isDoctor && (
-                <div className="space-y-2">
-                  <Label htmlFor="consultationFee">Consultation Fee</Label>
-                  <Input
-                    id="consultationFee"
-                    value={editingBranch.consultationFee || ''}
-                    onChange={(e) => setEditingBranch({...editingBranch, consultationFee: e.target.value})}
-                    placeholder="e.g., 300 EGP"
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="consultationFee">Consultation Fee</Label>
+                <Input
+                  id="consultationFee"
+                  value={editingBranch.consultationFee || ''}
+                  onChange={(e) => setEditingBranch({...editingBranch, consultationFee: e.target.value})}
+                  placeholder="e.g., 300 EGP"
+                />
+                <p className="text-xs text-amber-500">
+                  Note: MDKLI takes a 10% platform fee on every consultation fee collected through the app.
+                </p>
+              </div>
               
               {/* Media Upload Section */}
               <div className="space-y-2">

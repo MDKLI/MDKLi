@@ -4,6 +4,7 @@ import {
   User,
   Palette,
   MapPin,
+  Wallet,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -27,12 +28,21 @@ export function Settings() {
     },
   ]
   
-  // Add Branches tab for doctors and facilities
+// Add Branches tab for doctors and facilities
   if (isDoctor || isFacility) {
     sidebarNavItems.push({
       title: 'Branches',
       href: '/settings/branches',
       icon: <MapPin size={18} />,
+    })
+  }
+
+  // Add Payment tab for doctors and facilities (wallet, cards, withdrawals)
+  if (isDoctor || isFacility) {
+    sidebarNavItems.push({
+      title: 'Payment',
+      href: '/settings/payment',
+      icon: <Wallet size={18} />,
     })
   }
   

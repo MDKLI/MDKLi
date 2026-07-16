@@ -152,9 +152,10 @@ model Appointment {
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  branch   Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  doctor   Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient  Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  payments PaymentTransaction[]
 
   // Unique constraint to prevent double-booking
   @@unique([branchId, date, startTime, status], name: "unique_branch_slot", map: "idx_unique_appointment_slot")
@@ -171,6 +172,38 @@ enum AppointmentStatus {
   CANCELLED
   COMPLETED
   NO_SHOW
+  PENDING_PAYMENT
+  PAYMENT_FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  WALLET
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+model PaymentTransaction {
+  id            String        @id @default(uuid())
+  appointmentId String        @map("appointment_id")
+  paymobOrderId String        @map("paymob_order_id")
+  amount        Int
+  method        PaymentMethod
+  status        PaymentStatus @default(INITIATED)
+  rawPayload    Json?         @map("raw_payload")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([paymobOrderId])
+  @@map("payment_transactions")
 }
 
 enum CancelledByType {
@@ -178,7 +211,6 @@ enum CancelledByType {
   PATIENT
 }
 
-// DoctorSettings - advanced booking settings per doctor
 model DoctorSettings {
   id                  String   @id @default(uuid())
   doctorId            String   @unique @map("doctor_id")
@@ -194,4 +226,52 @@ model DoctorSettings {
   doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
   @@map("doctor_settings")
+}
+
+// Wallet - one per business (doctor userId for private practice, facility ownerUserId
+// for clinics/hospitals). Demo/mock only: credited 90% of every paid booking, 10% platform fee.
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  balance   Int      @default(0) // EGP, mock
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cards        WalletCard[]
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+// Mock payout card - fake numbers only, this is a demo, never store real PANs like this
+model WalletCard {
+  id             String   @id @default(uuid())
+  walletId       String   @map("wallet_id")
+  cardholderName String   @map("cardholder_name")
+  last4          String
+  brand          String   @default("MOCK")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_cards")
+}
+
+enum WalletTransactionType {
+  CREDIT
+  WITHDRAWAL
+}
+
+model WalletTransaction {
+  id            String                @id @default(uuid())
+  walletId      String                @map("wallet_id")
+  type          WalletTransactionType
+  amount        Int
+  appointmentId String?               @map("appointment_id")
+  note          String?
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_transactions")
 }

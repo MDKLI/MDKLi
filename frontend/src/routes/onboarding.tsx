@@ -1123,7 +1123,7 @@ function BranchesStep({
   branches, 
   onAddBranch, 
   onRemoveBranch,
-  isDoctor
+  isDoctor: _isDoctor
 }: { 
   onComplete: () => void, 
   isLoading: boolean,
@@ -1428,15 +1428,16 @@ function BranchesStep({
           </div>
 
           {/* Consultation Fee - Only for doctors */}
-          {isDoctor && (
-            <div className="space-y-2">
-              <Label htmlFor="consultationFee">Consultation Fee</Label>
-              <Input {...form.register('consultationFee')} placeholder="e.g., 300 EGP" />
-              <p className="text-xs text-muted-foreground">
-                Set your consultation fee for this branch
-              </p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="consultationFee">Consultation Fee</Label>
+            <Input {...form.register('consultationFee')} placeholder="e.g., 300 EGP" />
+            <p className="text-xs text-muted-foreground">
+              Set your consultation fee for this branch
+            </p>
+            <p className="text-xs text-amber-500">
+              Note: MDKLI takes a 10% platform fee on every consultation fee collected through the app.
+            </p>
+          </div>
 
           {/* Branch Media Upload */}
           <div className="space-y-2">
