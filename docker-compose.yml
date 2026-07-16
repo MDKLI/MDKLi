@@ -11,20 +11,20 @@ services:
       - PORT=3000
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=authdb
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_SECRET=${REFRESH_SECRET}
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
       - MINIO_PUBLIC_ENDPOINT=localhost
       - MINIO_PUBLIC_PORT=9000
       - MINIO_USE_SSL=false
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_BUCKET_NAME=mdkli-media
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
     depends_on:
       - postgres
       - minio
@@ -43,8 +43,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=authdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -59,8 +59,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -78,9 +78,10 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin
-      minioadmin; /usr/bin/mc mb myminio/mdkli-media || true; /usr/bin/mc policy
-      set public myminio/mdkli-media; exit 0; "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000
+      ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; /usr/bin/mc mb
+      myminio/mdkli-media || true; /usr/bin/mc policy set public
+      myminio/mdkli-media; exit 0; "
     networks:
       - app-network
 
@@ -90,7 +91,7 @@ services:
     ports:
       - "7700:7700"
     environment:
-      - MEILI_MASTER_KEY=masterKey
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - MEILI_HTTP_ADDR=0.0.0.0:7700
     volumes:
       - meilisearch_data:/meili_data
@@ -112,15 +113,15 @@ services:
       - PORT=3001
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=searchdb
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_SECRET=${JWT_SECRET}
       - MEILI_HOST=http://meilisearch:7700
-      - MEILI_API_KEY=masterKey
+      - MEILI_API_KEY=${MEILI_MASTER_KEY}
       - AUTH_SERVICE_URL=http://auth-service:3000
       - BOOKING_SERVICE_URL=http://booking-service:3004
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
     depends_on:
       - postgres
       - meilisearch
@@ -155,8 +156,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -175,16 +176,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3004
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/bookingdb
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/bookingdb
       - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
       - LOG_LEVEL=info
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
-      - PAYMOB_SECRET_KEY=${PAYMOB_SECRET_KEY}
-      - PAYMOB_PUBLIC_KEY=${PAYMOB_PUBLIC_KEY}
-      - PAYMOB_HMAC_SECRET=${PAYMOB_HMAC_SECRET}
-      - PAYMOB_INTEGRATION_IDS=${PAYMOB_INTEGRATION_IDS}
-      - FRONTEND_URL=${FRONTEND_URL}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - app-network
     healthcheck:
@@ -201,16 +197,16 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3005
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chatdb
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/chatdb
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - JWT_SECRET=${JWT_SECRET}
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
       - MINIO_PUBLIC_ENDPOINT=localhost
       - MINIO_PUBLIC_PORT=9000
       - MINIO_USE_SSL=false
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_BUCKET_NAME=mdkli-media
       - LOG_LEVEL=info
     depends_on:
@@ -232,9 +228,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3006
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/admindb
-      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/admindb
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - JWT_SECRET=${JWT_SECRET}
       - AUTH_SERVICE_URL=http://auth-service:3000
     depends_on:
       - postgres
