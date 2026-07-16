@@ -585,20 +585,22 @@ export const bookingApi = {
         method: 'GET',
         params: { patientId },
       }),
-  // Create a booking (New booking service)
+  // Create a booking (New booking service) - now returns a Paymob redirectUrl, booking isn't
+  // confirmed until the patient completes payment on Paymob's Unified Checkout page
   createBooking: (data: {
     doctor_id: string
     branch_id: string
     patient_id: string
     patient_email?: string
     patient_name?: string
+    patient_phone?: string
     booking_date: string
     start_time: string
     end_time: string
     reason?: string
     notes?: string
   }) =>
-    apiClient<{ success: boolean; data: any }>('/api/booking/public/appointments', {
+    apiClient<{ success: boolean; data: { appointmentId: string; status: string } }>('/api/booking/public/appointments', {
       method: 'POST',
       body: JSON.stringify({
         branchId: data.branch_id,
@@ -606,11 +608,67 @@ export const bookingApi = {
         patientId: data.patient_id,
         patientEmail: data.patient_email,
         patientName: data.patient_name,
+        patientPhone: data.patient_phone,
         date: data.booking_date,
         startTime: data.start_time,
         endTime: data.end_time,
         notes: data.notes || data.reason
       }),
     }),
+
+  // Poll payment status after Paymob redirects the patient back
+  getPaymentStatus: (appointmentId: string) =>
+    apiClient<{ success: boolean; data: { status: string; payment: any | null } }>(`/api/booking/payment/status/${appointmentId}`, {
+      method: 'GET',
+    }),
+
+  // MVP/demo only: confirm a fake payment (no real gateway, no validation on card fields)
+  confirmFakePayment: (appointmentId: string, card: { cardholderName: string; cardNumber: string; expiry: string; cvc: string }) =>
+    apiClient<{ success: boolean; data: { status: string } }>(`/api/booking/payment/fake-confirm/${appointmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(card),
+    }),
 }
+
+type WalletResponse = {
+  balance: number
+  cards: { id: string; cardholderName: string; last4: string; brand: string }[]
+  transactions: { id: string; type: 'CREDIT' | 'WITHDRAWAL'; amount: number; note: string | null; createdAt: string }[]
+}
+
+export const walletApi = {
+  async getWallet() {
+    const res = await apiClient<{ success: boolean; data: WalletResponse }>('/api/booking/wallet', {
+      method: 'GET',
+    })
+    if (res.error || !res.data?.data) throw new Error(res.error || 'Failed to load wallet')
+    return res.data.data
+  },
+
+  async addCard(payload: { cardholderName: string; cardNumber: string }) {
+    const res = await apiClient<{ success: boolean; data: any }>('/api/booking/wallet/cards', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    if (res.error) throw new Error(res.error)
+    return res.data?.data
+  },
+
+  async removeCard(cardId: string) {
+    const res = await apiClient<{ success: boolean }>(`/api/booking/wallet/cards/${cardId}`, {
+      method: 'DELETE',
+    })
+    if (res.error) throw new Error(res.error)
+  },
+
+  async withdraw(payload: { cardId: string; amount?: number }) {
+    const res = await apiClient<{ success: boolean; data: { balance: number } }>('/api/booking/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    if (res.error || !res.data?.data) throw new Error(res.error || 'Withdrawal failed')
+    return res.data.data
+  },
+}
+
 export const api = apiClient

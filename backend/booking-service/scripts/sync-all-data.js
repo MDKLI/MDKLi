@@ -65,31 +65,44 @@ async function syncData() {
         console.log(`  Doctor already exists: ${doctor.full_name || doctor.email}`);
       }
       
-      // Get branches for this doctor
+      // Get branches for this doctor - full field set, matching what RabbitMQ's
+      // branch.created/branch.updated events carry (see handleBranchEvent)
       const branchesResult = await authClient.query(
-        'SELECT id, name, address FROM branches WHERE user_id = $1',
+        `SELECT id, name, address, city, area, phone_numbers, consultation_fee, media_urls
+         FROM branches WHERE user_id = $1`,
         [doctor.user_id]
       );
       
       for (const branch of branchesResult.rows) {
-        // Check if branch exists in booking
-        const existingBranch = await bookingClient.query(
-          'SELECT id FROM branches WHERE id = $1',
-          [branch.id]
+        // Upsert so this script self-heals any branch that was previously synced
+        // with partial fields (e.g. from an older version of this script, or a
+        // dropped RabbitMQ event) instead of permanently skipping it once it exists.
+        await bookingClient.query(
+          `INSERT INTO branches (id, doctor_id, name, address, city, area, phone_numbers, consultation_fee, media_urls, is_virtual, timezone, is_active, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, 'UTC', true, NOW(), NOW())
+           ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             address = EXCLUDED.address,
+             city = EXCLUDED.city,
+             area = EXCLUDED.area,
+             phone_numbers = EXCLUDED.phone_numbers,
+             consultation_fee = EXCLUDED.consultation_fee,
+             media_urls = EXCLUDED.media_urls,
+             updated_at = NOW()`,
+          [
+            branch.id,
+            bookingDoctorId,
+            branch.name,
+            branch.address,
+            branch.city || null,
+            branch.area || null,
+            branch.phone_numbers || [],
+            branch.consultation_fee || null,
+            branch.media_urls || [],
+          ]
         );
-        
-        if (existingBranch.rows.length === 0) {
-          // Insert branch
-          await bookingClient.query(
-            `INSERT INTO branches (id, doctor_id, name, address, is_virtual, timezone, is_active, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, false, 'UTC', true, NOW(), NOW())`,
-            [branch.id, bookingDoctorId, branch.name, branch.address]
-          );
-          syncedBranches++;
-          console.log(`  ✓ Synced branch: ${branch.name}`);
-        } else {
-          console.log(`    Branch already exists: ${branch.name}`);
-        }
+        syncedBranches++;
+        console.log(`  ✓ Synced branch: ${branch.name}`);
       }
     }
 
@@ -99,7 +112,8 @@ async function syncData() {
     // The loop above only ever queried branches per known doctor.user_id, so these
     // were never synced at all. Catch every remaining auth branch here instead.
     const allAuthBranches = await authClient.query(
-      'SELECT id, name, address, user_id FROM branches'
+      `SELECT id, name, address, user_id, city, area, phone_numbers, consultation_fee, media_urls
+       FROM branches`
     );
 
     let syncedFacilityBranches = 0;
@@ -110,22 +124,33 @@ async function syncData() {
         continue;
       }
 
-      const existingBranch = await bookingClient.query(
-        'SELECT id FROM branches WHERE id = $1',
-        [branch.id]
+      await bookingClient.query(
+        `INSERT INTO branches (id, doctor_id, owner_user_id, name, address, city, area, phone_numbers, consultation_fee, media_urls, is_virtual, timezone, is_active, created_at, updated_at)
+         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, false, 'UTC', true, NOW(), NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           owner_user_id = EXCLUDED.owner_user_id,
+           name = EXCLUDED.name,
+           address = EXCLUDED.address,
+           city = EXCLUDED.city,
+           area = EXCLUDED.area,
+           phone_numbers = EXCLUDED.phone_numbers,
+           consultation_fee = EXCLUDED.consultation_fee,
+           media_urls = EXCLUDED.media_urls,
+           updated_at = NOW()`,
+        [
+          branch.id,
+          branch.user_id,
+          branch.name,
+          branch.address,
+          branch.city || null,
+          branch.area || null,
+          branch.phone_numbers || [],
+          branch.consultation_fee || null,
+          branch.media_urls || [],
+        ]
       );
-
-      if (existingBranch.rows.length === 0) {
-        await bookingClient.query(
-          `INSERT INTO branches (id, doctor_id, owner_user_id, name, address, is_virtual, timezone, is_active, created_at, updated_at)
-           VALUES ($1, NULL, $2, $3, $4, false, 'UTC', true, NOW(), NOW())`,
-          [branch.id, branch.user_id, branch.name, branch.address]
-        );
-        syncedFacilityBranches++;
-        console.log(`  ✓ Synced facility branch: ${branch.name}`);
-      } else {
-        console.log(`    Facility branch already exists: ${branch.name}`);
-      }
+      syncedFacilityBranches++;
+      console.log(`  ✓ Synced facility branch: ${branch.name}`);
     }
 
     // Sync patients

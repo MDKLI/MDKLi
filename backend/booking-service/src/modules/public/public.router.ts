@@ -311,18 +311,18 @@ router.post('/appointments', async (req, res, next) => {
       return
     }
     
-    // Check for double booking (extra safety)
+    // Check for double booking (extra safety) - PAYMENT_FAILED slots are free to rebook
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
         branchId,
         date: new Date(date),
         startTime,
         status: {
-          not: 'CANCELLED'
+          notIn: ['CANCELLED', 'PAYMENT_FAILED']
         }
       }
     })
-    
+
     if (existingAppointment) {
       res.status(409).json({
         error: 'Slot already booked',
@@ -330,9 +330,24 @@ router.post('/appointments', async (req, res, next) => {
       })
       return
     }
-    
-    // Create appointment
-    // Create appointment
+
+    // Resolve consultation fee: facility branches can override per-doctor via BranchAssignment
+    let consultationFee = branch.consultationFee
+    if (requestedDoctorId && requestedDoctorId !== branch.doctorId) {
+      const assignment = await prisma.branchAssignment.findFirst({
+        where: { branchId, doctorId: requestedDoctorId, isActive: true }
+      })
+      if (assignment?.consultationFee != null) consultationFee = assignment.consultationFee
+    }
+
+    if (!consultationFee || consultationFee <= 0) {
+      res.status(400).json({ error: 'This branch has no consultation fee configured' })
+      return
+    }
+
+    const { paymentMethod, walletPhone, patientPhone } = req.body
+
+    // Create appointment holding the slot while payment is pending
     const appointment = await prisma.appointment.create({
       data: {
         branchId,
@@ -341,33 +356,39 @@ router.post('/appointments', async (req, res, next) => {
         date: new Date(date),
         startTime,
         endTime,
-        status: 'PENDING',
+        status: 'PENDING_PAYMENT',
         notes: notes || null
-      },
-      include: {
-        branch: true,
-        doctor: true,
-        patient: true
       }
     })
-    
-logger.info(`Appointment created: ${appointment.id} for patient ${patientId}`)
 
-    rabbitMQClient
-      .publishEvent('appointment.created', {
-        id: appointment.id,
-        doctorId: appointment.doctorId,
-        branchId: appointment.branchId,
-        patientId: appointment.patientId,
-        status: appointment.status,
-        date: appointment.date,
-        consultationFee: branch.consultationFee ?? null,
-      })
-      .catch((err) => logger.error('Failed to publish appointment.created:', err))
+    logger.info(`Appointment ${appointment.id} created as PENDING_PAYMENT for patient ${patientId}`)
+
+    const billing = {
+      first_name: patient.name?.split(' ')[0] || 'Patient',
+      last_name: patient.name?.split(' ').slice(1).join(' ') || 'MDKLI',
+      email: patient.email,
+      phone_number: patientPhone || walletPhone || '+201000000000',
+    }
+
+    // MVP/demo: no real payment gateway. Create a fake transaction and let the
+    // frontend show its own fake card-entry page, which calls /payment/fake-confirm.
+    const fakePaymobOrderId = `FAKE-${appointment.id}`
+    await prisma.paymentTransaction.create({
+      data: {
+        appointmentId: appointment.id,
+        paymobOrderId: fakePaymobOrderId,
+        amount: consultationFee,
+        method: paymentMethod === 'WALLET' ? 'WALLET' : 'CARD',
+        status: 'INITIATED'
+      }
+    })
 
     res.status(201).json({
       success: true,
-      data: appointment
+      data: {
+        appointmentId: appointment.id,
+        status: appointment.status
+      }
     })
   } catch (error) {
     next(error)

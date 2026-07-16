@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Calendar, User, Mail, FileText } from 'lucide-react'
 import { toast } from 'sonner'
+import { useNavigate } from '@tanstack/react-router'
 import moment from 'moment'
 import { bookingApi } from '@/lib/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -69,6 +70,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
   const [reason, setReason] = useState('')
   const [notes, setNotes] = useState('')
   
+  const navigate = useNavigate()
   const user = useAuthStore(state => state.auth.user)
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
   
@@ -138,6 +140,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
         patient_id: user?.id || '',
         patient_email: patientEmail || user?.email,
         patient_name: patientName,
+        patient_phone: patientPhone || undefined,
         booking_date: selectedDate,
         start_time: selectedSlot.start_time,
         end_time: selectedSlot.end_time,
@@ -154,17 +157,26 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
         toast.error(result.error || 'Failed to book session')
         return
       }
-      
-      toast.success('Session booked successfully!')
-      setShowBookingDialog(false)
-      setSelectedSlot(null)
-      
-      // Reset form
-      setReason('')
-      setNotes('')
-      
-      // Refresh availability to show booked slot
-      fetchAvailability()
+
+      const appointmentId = result.data.data?.appointmentId
+      if (!appointmentId) {
+        toast.error('Something went wrong. Please try again.')
+        return
+      }
+
+      const fee = selectedBranch.consultation_fee || selectedBranch.consultationFee || 0
+
+      navigate({
+        to: '/booking/pay',
+        search: {
+          appointmentId,
+          amount: fee,
+          branchName: selectedBranch.name,
+          date: selectedDate || '',
+          startTime: selectedSlot?.start_time || '',
+          endTime: selectedSlot?.end_time || '',
+        },
+      })
     } catch (error) {
       console.error('Failed to book session:', error)
       toast.error('Failed to book session')
@@ -502,7 +514,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
               onClick={handleBookSession}
               disabled={bookingLoading || !patientName.trim()}
             >
-              {bookingLoading ? 'Booking...' : 'Confirm Booking'}
+              {bookingLoading ? 'Processing...' : 'Confirm & Pay'}
             </Button>
           </DialogFooter>
         </DialogContent>
