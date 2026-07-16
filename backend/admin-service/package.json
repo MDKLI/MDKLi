@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "lint": "biome check .",
     "dev": "ts-node-dev --respawn src/index.ts"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "winston": "^3.13.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
     "@types/amqplib": "^0.10.5",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",

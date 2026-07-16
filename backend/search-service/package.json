@@ -5,6 +5,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc",
     "dev": "nodemon src/index.ts",
+    "lint": "biome check .",
     "start": "node dist/index.js",
     "sync-index": "node dist/scripts/syncToMeilisearch.js"
   },
@@ -24,6 +25,7 @@
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
     "@types/amqplib": "^0.10.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
