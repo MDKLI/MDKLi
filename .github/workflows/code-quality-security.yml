@@ -53,7 +53,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: ESLint
+      - name: Lint
         run: npm run lint --if-present
 
       - name: Prettier (check only)

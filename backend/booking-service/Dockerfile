@@ -3,21 +3,18 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl=3.5.1-r0
 
 # Install dependencies (including dev dependencies for build)
 COPY package*.json ./
-RUN npm ci
 
 # Copy prisma schema and source
 COPY prisma ./prisma/
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build TypeScript
-RUN npm run build
+RUN npm ci \
+  && npx prisma generate \
+  && npm run build
 
 # Production stage
 FROM node:20-alpine
@@ -25,12 +22,10 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl=3.5.1-r0
 
 # Install production dependencies only
 COPY package*.json ./
-
-RUN npm ci --only=production
 
 # Copy prisma schema
 COPY prisma ./prisma/
@@ -43,8 +38,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY scripts ./scripts
 RUN chmod +x ./scripts/docker-entrypoint.sh
 
-# Generate Prisma client for production
-RUN npx prisma generate
+RUN npm ci --only=production \
+  && npx prisma generate
 
 # Expose port
 EXPOSE 3004
