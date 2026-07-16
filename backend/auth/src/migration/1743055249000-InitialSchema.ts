@@ -1,9 +1,9 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import type { MigrationInterface, QueryRunner } from "typeorm";
 
 export class InitialSchema1743055249000 implements MigrationInterface {
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Users
-        await queryRunner.query(`
+	public async up(queryRunner: QueryRunner): Promise<void> {
+		// Users
+		await queryRunner.query(`
             CREATE TABLE "users" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "username" character varying NOT NULL,
@@ -21,8 +21,8 @@ export class InitialSchema1743055249000 implements MigrationInterface {
             );
         `);
 
-        // Patient profiles
-        await queryRunner.query(`
+		// Patient profiles
+		await queryRunner.query(`
             CREATE TABLE "patient_profiles" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid NOT NULL,
@@ -51,8 +51,8 @@ export class InitialSchema1743055249000 implements MigrationInterface {
             );
         `);
 
-        // Clinic profiles
-        await queryRunner.query(`
+		// Clinic profiles
+		await queryRunner.query(`
             CREATE TABLE "clinic_profiles" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid NOT NULL,
@@ -70,8 +70,8 @@ export class InitialSchema1743055249000 implements MigrationInterface {
             );
         `);
 
-        // Doctors
-        await queryRunner.query(`
+		// Doctors
+		await queryRunner.query(`
             CREATE TABLE "doctors" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid NOT NULL,
@@ -88,8 +88,8 @@ export class InitialSchema1743055249000 implements MigrationInterface {
             );
         `);
 
-        // Pharmacy profiles
-        await queryRunner.query(`
+		// Pharmacy profiles
+		await queryRunner.query(`
             CREATE TABLE "pharmacy_profiles" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid NOT NULL,
@@ -107,13 +107,13 @@ export class InitialSchema1743055249000 implements MigrationInterface {
                 CONSTRAINT "FK_pharmacy_profiles_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE
             );
         `);
-    }
+	}
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TABLE "pharmacy_profiles"`);
-        await queryRunner.query(`DROP TABLE "doctors"`);
-        await queryRunner.query(`DROP TABLE "clinic_profiles"`);
-        await queryRunner.query(`DROP TABLE "patient_profiles"`);
-        await queryRunner.query(`DROP TABLE "users"`);
-    }
+	public async down(queryRunner: QueryRunner): Promise<void> {
+		await queryRunner.query(`DROP TABLE "pharmacy_profiles"`);
+		await queryRunner.query(`DROP TABLE "doctors"`);
+		await queryRunner.query(`DROP TABLE "clinic_profiles"`);
+		await queryRunner.query(`DROP TABLE "patient_profiles"`);
+		await queryRunner.query(`DROP TABLE "users"`);
+	}
 }

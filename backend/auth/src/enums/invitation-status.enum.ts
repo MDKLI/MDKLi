@@ -1,7 +1,7 @@
 export enum InvitationStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-  KICKED = 'kicked',
+	PENDING = "pending",
+	ACCEPTED = "accepted",
+	REJECTED = "rejected",
+	CANCELLED = "cancelled",
+	KICKED = "kicked",
 }

@@ -1,211 +1,219 @@
-import * as amqp from 'amqplib'
-import logger from '../utility/logger'
+import * as amqp from "amqplib";
+import logger from "../utility/logger";
 
 class RabbitMQService {
-  private connection: any = null
-  private channel: any = null
-  private readonly url: string
-  private reconnectAttempts = 0
-  private readonly maxReconnectAttempts = 10
+	private connection: any = null;
+	private channel: any = null;
+	private readonly url: string;
+	private reconnectAttempts = 0;
+	private readonly maxReconnectAttempts = 10;
 
-  constructor() {
-    // Use RabbitMQ credentials from env or default to admin/admin
-    const rabbitUser = process.env.RABBITMQ_USER || 'admin'
-    const rabbitPass = process.env.RABBITMQ_PASS || 'admin'
-    const rabbitHost = process.env.RABBITMQ_HOST || 'rabbitmq'
-    const rabbitPort = process.env.RABBITMQ_PORT || '5672'
-    this.url = process.env.RABBITMQ_URL || `amqp://${rabbitUser}:${rabbitPass}@${rabbitHost}:${rabbitPort}`
-  }
+	constructor() {
+		// Use RabbitMQ credentials from env or default to admin/admin
+		const rabbitUser = process.env.RABBITMQ_USER || "admin";
+		const rabbitPass = process.env.RABBITMQ_PASS || "admin";
+		const rabbitHost = process.env.RABBITMQ_HOST || "rabbitmq";
+		const rabbitPort = process.env.RABBITMQ_PORT || "5672";
+		this.url =
+			process.env.RABBITMQ_URL ||
+			`amqp://${rabbitUser}:${rabbitPass}@${rabbitHost}:${rabbitPort}`;
+	}
 
-  async connect(): Promise<void> {
-    try {
-      logger.info(`Connecting to RabbitMQ at ${this.url}`)
-      this.connection = await amqp.connect(this.url)
-      this.channel = await this.connection.createChannel()
-      
-      // Assert exchanges
-      await this.channel.assertExchange('auth.events', 'topic', { durable: true })
-      
-      // Handle connection events
-      this.connection.on('close', () => {
-        logger.warn('RabbitMQ connection closed, attempting to reconnect...')
-        this.reconnect()
-      })
+	async connect(): Promise<void> {
+		try {
+			logger.info(`Connecting to RabbitMQ at ${this.url}`);
+			this.connection = await amqp.connect(this.url);
+			this.channel = await this.connection.createChannel();
 
-      this.connection.on('error', (error: any) => {
-        logger.error('RabbitMQ connection error:', error)
-      })
+			// Assert exchanges
+			await this.channel.assertExchange("auth.events", "topic", {
+				durable: true,
+			});
 
-      this.reconnectAttempts = 0
-      logger.info('✅ RabbitMQ connected successfully')
-    } catch (error) {
-      logger.error('Failed to connect to RabbitMQ:', error)
-      this.reconnect()
-    }
-  }
+			// Handle connection events
+			this.connection.on("close", () => {
+				logger.warn("RabbitMQ connection closed, attempting to reconnect...");
+				this.reconnect();
+			});
 
-  private async reconnect(): Promise<void> {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error('Max RabbitMQ reconnection attempts reached')
-      return
-    }
+			this.connection.on("error", (error: any) => {
+				logger.error("RabbitMQ connection error:", error);
+			});
 
-    this.reconnectAttempts++
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000)
-    
-    logger.info(`Reconnecting to RabbitMQ in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-    
-    setTimeout(() => {
-      this.connect().catch((error: any) => {
-        logger.error('RabbitMQ reconnection failed:', error)
-      })
-    }, delay)
-  }
+			this.reconnectAttempts = 0;
+			logger.info("✅ RabbitMQ connected successfully");
+		} catch (error) {
+			logger.error("Failed to connect to RabbitMQ:", error);
+			this.reconnect();
+		}
+	}
 
-  getChannel(): any {
-    return this.channel
-  }
+	private async reconnect(): Promise<void> {
+		if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+			logger.error("Max RabbitMQ reconnection attempts reached");
+			return;
+		}
 
-  async publishEvent(routingKey: string, data: any): Promise<boolean> {
-    if (!this.channel) {
-      logger.warn('RabbitMQ channel not available, event not published')
-      return false
-    }
+		this.reconnectAttempts++;
+		const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30000);
 
-    try {
-      const message = JSON.stringify({
-        ...data,
-        timestamp: new Date().toISOString(),
-        source: 'auth-service'
-      })
+		logger.info(
+			`Reconnecting to RabbitMQ in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+		);
 
-      const published = this.channel.publish(
-        'auth.events',
-        routingKey,
-        Buffer.from(message),
-        { persistent: true }
-      )
+		setTimeout(() => {
+			this.connect().catch((error: any) => {
+				logger.error("RabbitMQ reconnection failed:", error);
+			});
+		}, delay);
+	}
 
-      if (published) {
-        logger.info(`Event published: ${routingKey}`)
-      } else {
-        logger.warn(`Event not published (channel write buffer full): ${routingKey}`)
-      }
+	getChannel(): any {
+		return this.channel;
+	}
 
-      return published
-    } catch (error) {
-      logger.error(`Failed to publish event ${routingKey}:`, error)
-      return false
-    }
-  }
+	async publishEvent(routingKey: string, data: any): Promise<boolean> {
+		if (!this.channel) {
+			logger.warn("RabbitMQ channel not available, event not published");
+			return false;
+		}
 
-  // Doctor events
-  async publishDoctorCreated(doctor: any): Promise<boolean> {
-    return this.publishEvent('doctor.created', doctor)
-  }
+		try {
+			const message = JSON.stringify({
+				...data,
+				timestamp: new Date().toISOString(),
+				source: "auth-service",
+			});
 
-  async publishDoctorUpdated(doctor: any): Promise<boolean> {
-    return this.publishEvent('doctor.updated', doctor)
-  }
+			const published = this.channel.publish(
+				"auth.events",
+				routingKey,
+				Buffer.from(message),
+				{ persistent: true },
+			);
 
-  async publishDoctorDeleted(doctorId: string): Promise<boolean> {
-    return this.publishEvent('doctor.deleted', { id: doctorId })
-  }
+			if (published) {
+				logger.info(`Event published: ${routingKey}`);
+			} else {
+				logger.warn(
+					`Event not published (channel write buffer full): ${routingKey}`,
+				);
+			}
 
-  async publishUserCreated(data: any): Promise<boolean> {
-    return this.publishEvent('user.created', data);
-  }
+			return published;
+		} catch (error) {
+			logger.error(`Failed to publish event ${routingKey}:`, error);
+			return false;
+		}
+	}
 
-  async publishUserUpdated(data: any): Promise<boolean> {
-    return this.publishEvent('user.updated', data);
-  }
-  // Facility events
-  async publishFacilityCreated(facility: any): Promise<boolean> {
-    return this.publishEvent('facility.created', facility)
-  }
+	// Doctor events
+	async publishDoctorCreated(doctor: any): Promise<boolean> {
+		return this.publishEvent("doctor.created", doctor);
+	}
 
-  async publishFacilityUpdated(facility: any): Promise<boolean> {
-    return this.publishEvent('facility.updated', facility)
-  }
+	async publishDoctorUpdated(doctor: any): Promise<boolean> {
+		return this.publishEvent("doctor.updated", doctor);
+	}
 
-  async publishFacilityDeleted(facilityId: string): Promise<boolean> {
-    return this.publishEvent('facility.deleted', { id: facilityId })
-  }
+	async publishDoctorDeleted(doctorId: string): Promise<boolean> {
+		return this.publishEvent("doctor.deleted", { id: doctorId });
+	}
 
-  // Branch events
-  async publishBranchCreated(branch: any): Promise<boolean> {
-    return this.publishEvent('branch.created', branch)
-  }
+	async publishUserCreated(data: any): Promise<boolean> {
+		return this.publishEvent("user.created", data);
+	}
 
-  async publishBranchUpdated(branch: any): Promise<boolean> {
-    return this.publishEvent('branch.updated', branch)
-  }
+	async publishUserUpdated(data: any): Promise<boolean> {
+		return this.publishEvent("user.updated", data);
+	}
+	// Facility events
+	async publishFacilityCreated(facility: any): Promise<boolean> {
+		return this.publishEvent("facility.created", facility);
+	}
 
-  async publishBranchDeleted(branchId: string): Promise<boolean> {
-    return this.publishEvent('branch.deleted', { id: branchId })
-  }
+	async publishFacilityUpdated(facility: any): Promise<boolean> {
+		return this.publishEvent("facility.updated", facility);
+	}
 
-  // Doctor-branch assignment events (facility invitations)
-  async publishDoctorBranchAssigned(data: any): Promise<boolean> {
-    return this.publishEvent('doctor_branch.assigned', data)
-  }
+	async publishFacilityDeleted(facilityId: string): Promise<boolean> {
+		return this.publishEvent("facility.deleted", { id: facilityId });
+	}
 
-  async publishDoctorBranchRemoved(data: any): Promise<boolean> {
-    return this.publishEvent('doctor_branch.removed', data)
-  }
+	// Branch events
+	async publishBranchCreated(branch: any): Promise<boolean> {
+		return this.publishEvent("branch.created", branch);
+	}
 
-  // Invitation events
-  async publishInvitationAccepted(invitation: any): Promise<boolean> {
-    return this.publishEvent('invitation.accepted', invitation)
-  }
+	async publishBranchUpdated(branch: any): Promise<boolean> {
+		return this.publishEvent("branch.updated", branch);
+	}
 
-  async publishInvitationRejected(invitation: any): Promise<boolean> {
-    return this.publishEvent('invitation.rejected', invitation)
-  }
+	async publishBranchDeleted(branchId: string): Promise<boolean> {
+		return this.publishEvent("branch.deleted", { id: branchId });
+	}
 
-  async publishUserBlocked(userId: string): Promise<void> {
-      await this.channel.publish(
-          'auth.events',
-          'user.blocked',
-          Buffer.from(JSON.stringify({ userId })),
-          { persistent: true }
-      );
-      logger.debug(`Published user.blocked event for ${userId}`);
-  }
+	// Doctor-branch assignment events (facility invitations)
+	async publishDoctorBranchAssigned(data: any): Promise<boolean> {
+		return this.publishEvent("doctor_branch.assigned", data);
+	}
 
-  async publishUserUnblocked(userId: string): Promise<void> {
-      await this.channel.publish(
-          'auth.events',
-          'user.unblocked',
-          Buffer.from(JSON.stringify({ userId })),
-          { persistent: true }
-      );
-      logger.debug(`Published user.unblocked event for ${userId}`);
-  }
+	async publishDoctorBranchRemoved(data: any): Promise<boolean> {
+		return this.publishEvent("doctor_branch.removed", data);
+	}
 
-  async publishUserDeleted(userId: string): Promise<void> {
-      await this.channel.publish(
-          'auth.events',
-          'user.deleted',
-          Buffer.from(JSON.stringify({ userId })),
-          { persistent: true }
-      );
-      logger.debug(`Published user.deleted event for ${userId}`);
-  }
+	// Invitation events
+	async publishInvitationAccepted(invitation: any): Promise<boolean> {
+		return this.publishEvent("invitation.accepted", invitation);
+	}
 
-  async close(): Promise<void> {
-    try {
-      if (this.channel) {
-        await this.channel.close()
-      }
-      if (this.connection) {
-        await this.connection.close()
-      }
-      logger.info('RabbitMQ connection closed')
-    } catch (error) {
-      logger.error('Error closing RabbitMQ connection:', error)
-    }
-  }
+	async publishInvitationRejected(invitation: any): Promise<boolean> {
+		return this.publishEvent("invitation.rejected", invitation);
+	}
+
+	async publishUserBlocked(userId: string): Promise<void> {
+		await this.channel.publish(
+			"auth.events",
+			"user.blocked",
+			Buffer.from(JSON.stringify({ userId })),
+			{ persistent: true },
+		);
+		logger.debug(`Published user.blocked event for ${userId}`);
+	}
+
+	async publishUserUnblocked(userId: string): Promise<void> {
+		await this.channel.publish(
+			"auth.events",
+			"user.unblocked",
+			Buffer.from(JSON.stringify({ userId })),
+			{ persistent: true },
+		);
+		logger.debug(`Published user.unblocked event for ${userId}`);
+	}
+
+	async publishUserDeleted(userId: string): Promise<void> {
+		await this.channel.publish(
+			"auth.events",
+			"user.deleted",
+			Buffer.from(JSON.stringify({ userId })),
+			{ persistent: true },
+		);
+		logger.debug(`Published user.deleted event for ${userId}`);
+	}
+
+	async close(): Promise<void> {
+		try {
+			if (this.channel) {
+				await this.channel.close();
+			}
+			if (this.connection) {
+				await this.connection.close();
+			}
+			logger.info("RabbitMQ connection closed");
+		} catch (error) {
+			logger.error("Error closing RabbitMQ connection:", error);
+		}
+	}
 }
 
-export const rabbitMQService = new RabbitMQService()
+export const rabbitMQService = new RabbitMQService();
