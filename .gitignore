@@ -1,7 +1,4 @@
 node_modules/
-./backend/search-filter/
-./backend/review/
-./backend/chat/
 # Build output
 dist/
 build/

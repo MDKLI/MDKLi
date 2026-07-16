@@ -1,3 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/latest/schema.json"
+  "files": {
+    "includes": ["**", "!**/dist", "!**/dist/**", "!**/node_modules", "!**/logs", "!**/*.min.js"]
+  }
 }
