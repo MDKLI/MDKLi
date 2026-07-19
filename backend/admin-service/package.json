@@ -2,12 +2,12 @@
 	"name": "admin-service",
 	"version": "1.0.0",
 	"main": "dist/index.js",
-  "scripts": {
-      "build": "prisma generate && tsc",
-      "start": "node dist/index.js",
-      "lint": "biome check .",
-      "dev": "ts-node-dev --respawn src/index.ts"
-  },
+	"scripts": {
+		"build": "prisma generate && tsc",
+		"start": "node dist/index.js",
+		"lint": "biome check .",
+		"dev": "ts-node-dev --respawn src/index.ts"
+	},
 	"dependencies": {
 		"@prisma/client": "^5.20.0",
 		"amqplib": "^0.10.4",
