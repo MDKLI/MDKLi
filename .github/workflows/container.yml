@@ -76,6 +76,7 @@ jobs:
       packages: write
       id-token: write
       security-events: write
+      actions: read # <-- Allows the SARIF uploader to talk to the workflow API
     strategy:
       fail-fast: false
       matrix:
@@ -144,14 +145,6 @@ jobs:
           output-file: ${{ matrix.service.name }}-sbom.spdx.json
         continue-on-error: true
 
-      - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0.17.0
-        with:
-          image: local/${{ matrix.service.image }}:${{ github.sha }}
-          format: spdx-json
-          output-file: ${{ matrix.service.name }}-sbom.spdx.json
-        continue-on-error: true
-
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
@@ -160,7 +153,7 @@ jobs:
           retention-days: 30
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0 # <-- Fixed patched version
         with:
           image-ref: local/${{ matrix.service.image }}:${{ github.sha }}
           format: sarif
@@ -170,7 +163,7 @@ jobs:
           cache-dir: /tmp/.trivy-cache
 
       - name: Upload Trivy SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4 # <-- Upgraded to v4 to prevent deprecation
         if: always()
         with:
           sarif_file: trivy-${{ matrix.service.name }}.sarif
