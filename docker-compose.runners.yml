@@ -11,10 +11,13 @@ services:
       - RUNNER_WORKDIR=/tmp/runner/work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
-      - EPHEMERAL=true
+      - EPHEMERAL=false # <-- changed
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner1_work:/tmp/runner/work
+      - runner1_npm_cache:/home/runner/.npm
+      - buildx_cache:/tmp/.buildx-cache
+      - trivy_cache:/tmp/.trivy-cache
     restart: unless-stopped
 
   runner-2:
@@ -27,12 +30,61 @@ services:
       - RUNNER_WORKDIR=/tmp/runner/work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
-      - EPHEMERAL=true
+      - EPHEMERAL=false # <-- changed
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner2_work:/tmp/runner/work
+      - runner2_npm_cache:/home/runner/.npm
+      - buildx_cache:/tmp/.buildx-cache
+      - trivy_cache:/tmp/.trivy-cache
+    restart: unless-stopped
+
+  runner-3:
+    image: myoung34/github-runner:latest
+    container_name: mdkli-runner-3
+    environment:
+      - REPO_URL=${REPO_URL}
+      - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+      - RUNNER_NAME=mdkli-runner-3
+      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_GROUP=default
+      - LABELS=${RUNNER_LABELS}
+      - EPHEMERAL=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner3_work:/tmp/runner/work
+      - runner3_npm_cache:/home/runner/.npm
+      - buildx_cache:/tmp/.buildx-cache
+      - trivy_cache:/tmp/.trivy-cache
+    restart: unless-stopped
+
+  runner-4:
+    image: myoung34/github-runner:latest
+    container_name: mdkli-runner-4
+    environment:
+      - REPO_URL=${REPO_URL}
+      - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+      - RUNNER_NAME=mdkli-runner-4
+      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_GROUP=default
+      - LABELS=${RUNNER_LABELS}
+      - EPHEMERAL=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner4_work:/tmp/runner/work
+      - runner4_npm_cache:/home/runner/.npm
+      - buildx_cache:/tmp/.buildx-cache
+      - trivy_cache:/tmp/.trivy-cache
     restart: unless-stopped
 
 volumes:
   runner1_work:
   runner2_work:
+  runner3_work:
+  runner4_work:
+  runner1_npm_cache:
+  runner2_npm_cache:
+  runner3_npm_cache:
+  runner4_npm_cache:
+  buildx_cache:
+  trivy_cache:

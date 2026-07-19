@@ -14,7 +14,6 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # Hadolint - Dockerfile linting, per service (matrix)
   hadolint:
     name: ${{ matrix.service.name }} / Hadolint
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -39,12 +38,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: ${{ matrix.service.path }}/Dockerfile
-          failure-threshold: warning
+        run: |
+          docker run --rm -i \
+            -v "${{ github.workspace }}:/workspace" \
+            hadolint/hadolint \
+            hadolint --failure-threshold=warning \
+            "/workspace/${{ matrix.service.path }}/Dockerfile"
 
-  # docker compose config - validate the compose file resolves cleanly
   compose-validate:
     name: docker compose config
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -69,7 +69,6 @@ jobs:
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
 
-  # Build, SBOM, scan - per service (matrix)
   build-scan-push:
     name: ${{ matrix.service.name }} / build, scan, push
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -136,8 +135,8 @@ jobs:
           load: true
           tags: local/${{ matrix.service.image }}:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.service.name }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.service.name }},mode=max
 
       - name: Generate SBOM with Syft
         uses: anchore/sbom-action@v0.17.0
@@ -162,6 +161,7 @@ jobs:
           output: trivy-${{ matrix.service.name }}.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          cache-dir: /tmp/.trivy-cache
 
       - name: Upload Trivy SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -188,8 +188,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.service.name }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.service.name }},mode=max
 
       - name: Install Cosign
         if: github.event_name != 'pull_request'

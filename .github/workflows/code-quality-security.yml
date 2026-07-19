@@ -14,7 +14,6 @@ env:
   NODE_VERSION: '24'
 
 jobs:
-  # Lint + Type Check + Build, per service (matrix)
   lint-typecheck-build:
     name: ${{ matrix.service.name }} / lint, typecheck, build
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -39,10 +38,10 @@ jobs:
         working-directory: ${{ matrix.service.path }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -51,14 +50,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npx @biomejs/biome format --write .
-
-      - name: Biome
-        run: npx @biomejs/biome check .
-
-      - name: Biome format check
-        run: npx @biomejs/biome format .
+      - name: Biome check (lint + format)
+        run: npx @biomejs/biome check --write .
 
       - name: TypeScript type check
         run: npm run typecheck --if-present || npx tsc --noEmit
@@ -66,7 +59,6 @@ jobs:
       - name: Build
         run: npm run build --if-present
 
-  # CodeQL - static analysis (JS/TS across the whole repo)
   codeql:
     name: CodeQL
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -76,23 +68,20 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
           queries: security-and-quality
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+          build-mode: none
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: '/language:javascript-typescript'
 
-  # Semgrep - SAST rules
   semgrep:
     name: Semgrep
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -103,7 +92,7 @@ jobs:
       image: semgrep/semgrep
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Run Semgrep
         run: |
@@ -123,7 +112,6 @@ jobs:
         with:
           sarif_file: semgrep.sarif
 
-  # Gitleaks - secret scanning
   gitleaks:
     name: Gitleaks
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -133,13 +121,12 @@ jobs:
       image: ghcr.io/gitleaks/gitleaks:latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Run Gitleaks
         run: gitleaks detect --source . --verbose --redact
 
-  # OSV Scanner - dependency vulnerability scanning
   osv-scanner:
     name: OSV Scanner
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -148,7 +135,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Run OSV Scanner
         uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
@@ -161,13 +148,22 @@ jobs:
             ./
         continue-on-error: true
 
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Check for SARIF file
+        id: check-osv-sarif
         if: always()
+        run: |
+          if [ -f osv-results.sarif ]; then
+            echo "sarif_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sarif_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload OSV SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && steps.check-osv-sarif.outputs.sarif_exists == 'true'
         with:
           sarif_file: osv-results.sarif
 
-  # npm audit, per service (matrix)
   npm-audit:
     name: ${{ matrix.service.name }} / npm audit
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -192,10 +188,10 @@ jobs:
         working-directory: ${{ matrix.service.path }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -207,7 +203,6 @@ jobs:
       - name: npm audit (fail on high/critical)
         run: npm audit --audit-level=high
 
-  # OpenSSF Scorecard - supply chain security posture
   scorecard:
     name: OpenSSF Scorecard
     runs-on: [self-hosted, linux, x64, mdkli]
@@ -218,7 +213,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
 
