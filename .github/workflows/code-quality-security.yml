@@ -57,7 +57,7 @@ jobs:
         run: npx @biomejs/biome check .
 
       - name: Biome format check
-        run: npx @biomejs/biome format . --check
+        run: npx @biomejs/biome format .
 
       - name: TypeScript type check
         run: npm run typecheck --if-present || npx tsc --noEmit
