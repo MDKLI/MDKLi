@@ -8,13 +8,13 @@ services:
       - REPO_URL=${REPO_URL}
       - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
       - RUNNER_NAME=mdkli-runner-1
-      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_WORKDIR=/tmp/runner1_work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
-      - EPHEMERAL=false # <-- changed
+      - EPHEMERAL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner1_work:/tmp/runner/work
+      - /tmp/runner1_work:/tmp/runner1_work
       - runner1_npm_cache:/home/runner/.npm
       - buildx_cache:/tmp/.buildx-cache
       - trivy_cache:/tmp/.trivy-cache
@@ -27,13 +27,13 @@ services:
       - REPO_URL=${REPO_URL}
       - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
       - RUNNER_NAME=mdkli-runner-2
-      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_WORKDIR=/tmp/runner2_work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
-      - EPHEMERAL=false # <-- changed
+      - EPHEMERAL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner2_work:/tmp/runner/work
+      - /tmp/runner2_work:/tmp/runner2_work
       - runner2_npm_cache:/home/runner/.npm
       - buildx_cache:/tmp/.buildx-cache
       - trivy_cache:/tmp/.trivy-cache
@@ -46,13 +46,13 @@ services:
       - REPO_URL=${REPO_URL}
       - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
       - RUNNER_NAME=mdkli-runner-3
-      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_WORKDIR=/tmp/runner3_work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
       - EPHEMERAL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner3_work:/tmp/runner/work
+      - /tmp/runner3_work:/tmp/runner3_work
       - runner3_npm_cache:/home/runner/.npm
       - buildx_cache:/tmp/.buildx-cache
       - trivy_cache:/tmp/.trivy-cache
@@ -65,23 +65,19 @@ services:
       - REPO_URL=${REPO_URL}
       - ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
       - RUNNER_NAME=mdkli-runner-4
-      - RUNNER_WORKDIR=/tmp/runner/work
+      - RUNNER_WORKDIR=/tmp/runner4_work
       - RUNNER_GROUP=default
       - LABELS=${RUNNER_LABELS}
       - EPHEMERAL=false
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - runner4_work:/tmp/runner/work
+      - /tmp/runner4_work:/tmp/runner4_work
       - runner4_npm_cache:/home/runner/.npm
       - buildx_cache:/tmp/.buildx-cache
       - trivy_cache:/tmp/.trivy-cache
     restart: unless-stopped
 
 volumes:
-  runner1_work:
-  runner2_work:
-  runner3_work:
-  runner4_work:
   runner1_npm_cache:
   runner2_npm_cache:
   runner3_npm_cache:

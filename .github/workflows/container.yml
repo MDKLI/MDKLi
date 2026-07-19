@@ -144,6 +144,14 @@ jobs:
           output-file: ${{ matrix.service.name }}-sbom.spdx.json
         continue-on-error: true
 
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0.17.0
+        with:
+          image: local/${{ matrix.service.image }}:${{ github.sha }}
+          format: spdx-json
+          output-file: ${{ matrix.service.name }}-sbom.spdx.json
+        continue-on-error: true
+
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
@@ -152,7 +160,7 @@ jobs:
           retention-days: 30
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: local/${{ matrix.service.image }}:${{ github.sha }}
           format: sarif
@@ -169,7 +177,7 @@ jobs:
           category: trivy-${{ matrix.service.name }}
 
       - name: Fail build on critical vulnerabilities
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: local/${{ matrix.service.image }}:${{ github.sha }}
           format: table
