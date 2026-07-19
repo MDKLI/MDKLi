@@ -39,10 +39,10 @@ jobs:
 
       - name: Run Hadolint
         run: |
-          docker run --rm -i \
+          docker run --rm \
             -v "${{ github.workspace }}:/workspace" \
             hadolint/hadolint \
-            hadolint --failure-threshold=warning \
+            --failure-threshold=warning \
             "/workspace/${{ matrix.service.path }}/Dockerfile"
 
   compose-validate:
