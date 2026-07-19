@@ -142,7 +142,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
 
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0.17.0
+        uses: anchore/sbom-action@v0.24.0
         with:
           image: local/${{ matrix.service.image }}:${{ github.sha }}
           format: spdx-json
