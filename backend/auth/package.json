@@ -59,6 +59,6 @@
 		"qrcode": "^1.5.4",
 		"speakeasy": "^2.0.0",
 		"typeorm": "^0.3.21",
-		"winston": "^3.17.0"
+		"winston": "^3.19.0"
 	}
 }
