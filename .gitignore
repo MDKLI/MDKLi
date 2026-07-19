@@ -69,7 +69,4 @@ vite.svg
 
 # Generated files
 *.generated.*
-/backend/chat
-/backend/review
-/backend/search-filter
 .aider*
