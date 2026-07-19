@@ -35,7 +35,7 @@ jobs:
             path: frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7 # <-- Upgraded to v7
 
       - name: Run Hadolint
         uses: hadolint/hadolint-action@v3.1.0
@@ -48,7 +48,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, mdkli]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7 # <-- Upgraded to v7
 
       - name: Create dummy .env for validation
         run: |
@@ -76,7 +76,7 @@ jobs:
       packages: write
       id-token: write
       security-events: write
-      actions: read # <-- Allows the SARIF uploader to talk to the workflow API
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -101,7 +101,7 @@ jobs:
             image: mdkli-frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7 # <-- Upgraded to v7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -153,7 +153,7 @@ jobs:
           retention-days: 30
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@v0.36.0 # <-- Fixed patched version
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: local/${{ matrix.service.image }}:${{ github.sha }}
           format: sarif
@@ -163,7 +163,7 @@ jobs:
           cache-dir: /tmp/.trivy-cache
 
       - name: Upload Trivy SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4 # <-- Upgraded to v4 to prevent deprecation
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-${{ matrix.service.name }}.sarif
