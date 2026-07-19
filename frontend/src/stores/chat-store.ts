@@ -1,11 +1,11 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 interface ChatStore {
-  unreadCount: number
-  setUnreadCount: (n: number) => void
+	unreadCount: number;
+	setUnreadCount: (n: number) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
-  unreadCount: 0,
-  setUnreadCount: (n) => set({ unreadCount: n }),
-}))
+	unreadCount: 0,
+	setUnreadCount: (n) => set({ unreadCount: n }),
+}));

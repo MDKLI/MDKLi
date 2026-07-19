@@ -14,6 +14,7 @@ services:
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=authdb
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/authdb
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_SECRET=${REFRESH_SECRET}
       - MINIO_ENDPOINT=minio
@@ -31,11 +32,6 @@ services:
       - rabbitmq
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # PostgreSQL Database (Multi-DB)
   postgres:
@@ -128,11 +124,6 @@ services:
       - rabbitmq
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Redis Cache
   redis:
@@ -181,13 +172,11 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
       - LOG_LEVEL=info
       - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+      - rabbitmq
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Chat Service
   chat-service:
@@ -215,11 +204,6 @@ services:
       - minio
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   admin-service:
     build: ./backend/admin-service
@@ -237,11 +221,6 @@ services:
       - rabbitmq
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Main Frontend (Vite - serves both landing and dashboard)
   frontend:

@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { SearchPage } from '@/features/search/SearchPage'
+import { createFileRoute } from "@tanstack/react-router";
+import { SearchPage } from "@/features/search/SearchPage";
 
-export const Route = createFileRoute('/_authenticated/search')({
-  component: SearchPage,
-})
+export const Route = createFileRoute("/_authenticated/search")({
+	component: SearchPage,
+});

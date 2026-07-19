@@ -1,5 +1,65 @@
 {
   "files": {
-    "includes": ["**", "!**/dist", "!**/dist/**", "!**/node_modules", "!**/logs", "!**/*.min.js"]
-  }
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/dist/**",
+      "!**/node_modules",
+      "!**/logs",
+      "!**/*.min.js",
+      "!**/routeTree.gen.ts"
+    ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noExplicitAny": "warn",
+        "noConsole": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "noUnusedImports": "warn"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "warn",
+        "useIndexOf": "warn",
+        "useOptionalChain": "warn"
+      },
+      "style": {
+        "useNodejsImportProtocol": "warn",
+        "useImportType": "warn",
+        "noNonNullAssertion": "warn",
+        "useExponentiationOperator": "warn"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/public/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/routes/index.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useValidAnchor": "off"
+          }
+        }
+      }
+    }
+  ]
 }

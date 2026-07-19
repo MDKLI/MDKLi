@@ -1,0 +1,100 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+
+# Build outputs (generated during Docker build)
+dist
+build
+.next
+.nuxt
+.output
+
+# Environment files (secrets should never be in the image)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Logs & runtime
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Coverage & tests
+coverage
+.nyc_output
+__tests__
+__mocks__
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+test/
+tests/
+
+# TypeScript compilation info (only if you use incremental builds)
+*.tsbuildinfo
+
+# IDE and editors
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS files
+Desktop.ini
+
+# Package manager files (keep lockfiles, ignore cache)
+.pnpm-store
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Optional: if you use Nx or Turborepo and have .cache
+.turbo
+.cache
+
+# Prisma (keep prisma/schema.prisma etc., ignore generated client if present in source)
+# The generated client will be recreated inside Docker, so we can ignore it if it exists.
+node_modules/.prisma
+
+# Documentation & images (not needed at runtime)
+README.md
+CHANGELOG.md
+LICENSE
+screenshots
+docs
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+node_modules
+dist
+.env
+.git
+*.md
+Dockerfile
+.dockerignore
+__tests__
+src
+tsconfig.json
+logs
+coverage

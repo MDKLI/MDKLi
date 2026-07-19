@@ -1,0 +1,786 @@
+src/components/layout/app-sidebar.tsx:38:3 lint/suspicious/noDocumentCookie ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━src/components/layout/app-sidebar.tsx:38:3 lint/suspicious/noDocumentCookie ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Direct assigning to document.cookie is not recommended.
+  
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Direct assigning to document.cookie is not recommended.
+  
+        36 │ 36 │ 		useEffecuseEffect(() => t(() => {
+    37{
+    37 │ 		s │ 		setOpen(tetOpen(true);
+ rue);
+  > 38 │ > 38 │ 		do 		document.ccument.cookie = ookie = "sidebar_"sidebar_state=expstate=expanded; panded; path=/; math=/; max-age=3ax-age=31536000"1536000";
+       ;
+       │ 		^^^│ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    39 ^
+    39 │ 	}, │ 	}, [setOpen[setOpen]);
+    ]);
+    40 │ 
+  40 │ 
+  
+  i 
+  i Consider Consider using the using the Cookie StCookie Store API.
+ore API.
+  
+
+s  
+
+src/componerc/components/ui/sidnts/ui/sidebar.tsxebar.tsx:83:4 lint/suspicious/noDocumentCookie ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━:83:4 lint/suspicious/noDocumentCookie ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! 
+
+  ! Direct assDirect assigning to igning to document.cdocument.cookie is nookie is not recommeot recommended.
+  
+nded.
+  
+    82 │ 			// This sets the cookie to keep the sidebar state.
+  > 83 │ 			document.cookie = `${SID    82 │ 			// This sets the cookie to keep the sidebar state.
+  > 83 │ 			document.cookie = `${SIDEBAR_COOKIE_NAME}=${opEBAR_COOKIE_NAME}=${openState};enState}; path=/;  path=/; max-age=$max-age=${SIDEBAR_{SIDEBAR_COOKIE_MACOOKIE_MAX_AGE}`;
+X_AGE}`;
+       │        │ 			^^^^^			^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^
+    84 │  84 │ 		},
+   		},
+    85 │  85 │ 		[setOp		[setOpenProp, enProp, open],
+ open],
+  
+  i C 
+  i Consider usonsider using the Cing the Cookie Storookie Store API.
+  e API.
+  
+
+src/l
+
+src/lib/cookiesib/cookies.ts:33:2 lint/suspicious/noDoc.ts:33:2 lint/suspicious/noDocumentCookie ━━━━━━━━━umentCookie ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━
+
+  ! Dire  ! Direct assignict assigning to docung to document.cookment.cookie is not ie is not recommenderecommended.
+  
+d.
+  
+    3    31 │ 	if (typeof document === "undefined") return;
+    32 │ 
+  > 33 │ 	document.cookie = `${name}=${value}; path=/; max-age=${maxAge}`;
+       │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    34 │ }
+    35 │ 
+  
+  i Consider u1 │ 	if (typeof document === "undefined") return;
+    32 │ 
+  > 33 │ 	document.cookie = `${name}=${value}; path=/; max-age=${maxAge}`;
+       │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    34 │ }
+    35 │ 
+  
+  i Consider using the sing the Cookie StCookie Store APIore API.
+  
+
+.
+  
+
+src/lib/src/lib/cookies.tcookies.tss:42:2 :42:2 lint/suslint/suspicious/picious/noDocumenoDocumentCookientCookie ━━━━ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  ! Di  ! Direct assirect assigning togning to documen document.cookiet.cookie is not  is not recommenrecommended.
+  
+ded.
+  
+     40 │    40 │ 	if (	if (typeof typeof documendocument === "t === "undefinundefined") reed") return;
+ turn;
+    41 │    41 │ 
+  > 
+  > 42 │ 42 │ 	docume	document.cooknt.cookie = `$ie = `${name}={name}=; path; path=/; max=/; max-age=0`-age=0`;
+     ;
+       │ 	^^  │ 	^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^
+    43 │  43 │ }
+    }
+    44 │ 44 │ 
+  
+  
+  
+  i Consii Consider usinder using the Cg the Cookie Stookie Store API.ore API.
+  
+
+
+  
+
+src/compsrc/components/uonents/ui/input-i/input-otp.tsxotp.tsx:68:3 lint/a11y/:68:3 lint/a11y/useFocusauseFocusableInterbleInteractive active ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  × T  × The HTML he HTML element element with the with the interactiinteractive role ve role "separat"separator" is nor" is not focusot focusable.
+  able.
+  
+
+     66 │    66 │ funcfunction Intion InputOTPSputOTPSeparatoeparator({ ...r({ ...props }props }: React: React.Compon.ComponentPropentProps<"div"s<"div">) {
+  >) {
+    67 │   67 │ 	retu	return (
+  rn (
+  > 68 │ > 68 │ 		<di		<div data-v data-slot="islot="input-otnput-otp-separp-separator" rator" role="seole="separatorparator" {...p" {...props}>
+rops}>
+       │       │ 		^^^ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^
+    69 │ 69 │ 			<Min			<MinusIcon usIcon />
+    />
+    70 │ 70 │ 		</div		</div>
+  
+  >
+  
+  i A noni A non-interac-interactive HTMtive HTML elemenL element that it that is not fos not focusable cusable may not may not be reachbe reachable forable for users t users that relyhat rely on keyb on keyboard navoard navigation,igation, even wi even with an adth an added roleded role like " like "separatoseparator".
+  
+r".
+  
+  i Add  i Add a tabIn a tabIndex attrdex attribute toibute to make th make this elemeis element focusnt focusable.
+  able.
+  
+
+src/
+
+src/componencomponents/ui/ints/ui/input-otp.tput-otp.tsxsx::68:40 l68:40 lint/a11yint/a11y/useSema/useSemanticElemnticElements ents ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  ×   × The elemThe elements witents with this rh this role can ole can be changbe changed to thed to the followe following eleming elements:
+ ents:
+    <hr>   <hr>
+  
+
+  
+    66     66 │ fun│ function Iction InputOTPnputOTPSeparatSeparator({ ..or({ ...props .props }: Reac}: React.Compot.ComponentPronentProps<"divps<"div">) {
+ ">) {
+    67 │   67 │ 	re 	return (turn (
+  > 68
+  > 68 │ 		 │ 		<div da<div data-slotta-slot="input="input-otp-se-otp-separatorparator" role=" role="separa"separator" {.tor" {...props..props}>
+    }>
+       │ 		   │ 		                                                                    ^^^^^^^^^^      ^^^^^^^^^^^^^^^^^^^^^^
+    69 │ 
+    69 │ 			<MinusIc			<MinusIcon />
+ on />
+    70 │   70 │ 		< 		</div>
+ /div>
+  
+  i  
+  i For examFor examples andples and more in more informatioformation, see n, see WAI-ARIAWAI-ARIA Roles
+ Roles
+  
+  i   
+  i Replace Replace with onewith one of thes of these elemene elements:
+  
+ts:
+  
+  - <  - <hr>
+  hr>
+  
+
+src/
+
+src/componencomponents/ui/ints/ui/input-otp.put-otp.tsxtsx:68:40 :68:40 lint/a11ylint/a11y/useAria/useAriaPropsForPropsForRole Role ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  × Th  × The elemene element with tt with the separhe separator ARIator ARIA role dA role does not oes not have thehave the require required ARIA ad ARIA attributettributes.
+  
+s.
+  
+    66 │ functi    66 │ function InputOTon InputOTPSeparaPSeparator({ .tor({ ...props..props }: Rea }: React.Compct.ComponentPronentProps<"diops<"div">) {
+v">) {
+    67 │    67 │ 	re 	return turn ((
+  > 68
+  > 68 │ 		 │ 		<div da<div data-slotta-slot="input="input-otp-se-otp-separatorparator" role=" role="separa"separator" {.tor" {...props..props}>
+     }>
+       │ 		   │ 		                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^
+    69 │  69 │ 			<Mi			<MinusIconnusIcon />
+    />
+    70 │  70 │ 		</di		</div>
+  
+ v>
+  
+  i Miss i Missing ARIAing ARIA prop(s) prop(s):
+  
+  :
+  
+  - aria-- aria-valuenowvaluenow
+  
+
+
+  
+
+src/featsrc/features/setures/settings/avtings/availabiliailability/indexty/index.tsx.tsx:937:21 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━:937:21 lint/suspicious/noArrayIndexKey ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  × A  × Avoid usivoid using the ing the index of ndex of an arrayan array as key  as key propertyproperty in an e in an element.
+lement.
+  
+  
+    935 │ 													return (
+    936 │ 														<Button
+  > 937 │ 															key={i}
+        │ 														    935 │ 													return (
+    936 │ 														<Button
+  > 937 │ 															key={i}
+        │ 															     ^
+    938 │ 									     ^
+    938 │ 															variant={isSelected ? "default" : "outline"							variant={isSelected ? "default" : "outline"}
+    9}
+    939 │ 39 │ 																													class	className="hName="h-11 tex-11 text-sm wt-sm w-full"
+-full"
+  
+  i   
+  i This iThis is the sos the source of urce of the key the key value.
+ value.
+  
+ 
+    929 │ 											{rescheduleSelectedDay.slots
+    930 │ 												.filter((s) => s.is_available)
+  > 931 │ 												.map((slot, i    929 │ 											{rescheduleSelectedDay.slots
+    930 │ 												.filter((s) => s.is_available)
+  > 931 │ 												.map((slot, i) => {
+        │ 												) => {
+        │ 												                    ^
+      ^
+    932 │   932 │ 																									const 	const isSelecisSelected =
+ ted =
+    933    933 │ 		│ 																					re					reschedulscheduleSelecteSelectedSlot?edSlot?.start_.start_time ==time ===
+  
+  =
+  
+  i The oi The order of rder of the itemthe items may chs may change, anange, and this ad this also affelso affects perfcts performancesormances and com and component sponent state.
+  tate.
+  
+  i C
+  i Check the Reacheck the React documet documentationntation. 
+  
+
+. 
+  
+
+src/featuressrc/features/settings/ava/settings/availability/inilability/index.tsxdex.tsx:1689:17 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit t:1689:17 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Provide an explicit type prop for the button elementype prop for the button element.
+  
+.
+  
+    1688 │ 															return (
+  > 1689 │ 																<button
+         │ 																^^^^^^^
+  > 1690 │ 																	key={idx}
+          1688 │ 															return (
+  > 1689 │ 																<button
+         │ 																^^^^^^^
+  > 1690 │ 																	key={idx}
+          ...
+  > 1703 │ 							    ...
+  > 1703 │ 																								}
+  			}
+  > 1704 > 1704 │ 			│ 																							>						>
+      
+         │ 		   │ 																														^
+    1^
+    1705 │ 705 │ 																														{da				{day.date(y.date()}
+    )}
+    1706 │ 1706 │ 																													</bu			</button>
+ tton>
+  
+  i  
+  i The defaThe default typult type of a e of a button ibutton is submis submit, whit, which causesch causes the sub the submission mission of a forof a form when pm when placed inlaced inside a `side a `form` elform` element. Tement. This is lhis is likely noikely not the bet the behaviour thaviour that you hat you want inswant inside a Reaide a React applict application.
+cation.
+  
+  i   
+  i AllowedAllowed button  button types artypes are: submie: submit, buttt, button or ron or reset
+  eset
+  
+
+src
+
+src/feature/features/settins/settings/availags/availability/inbility/index.tsxdex.tsx:1690::1690:23 lint/s23 lint/suspiciouuspicious/noArras/noArrayIndexKeyIndexKey ━━y ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ━━━
+
+  × Avo × Avoid usingid using the ind the index of anex of an array a array as key prs key property ioperty in an elen an element.
+  ment.
+  
+
+    1    1688 │ 688 │ 																													return	return (
+     (
+    1689 │ 1689 │ 																											<b					<button
+utton
+  > 169  > 1690 │ 	0 │ 																															key={		key={idx}
+  idx}
+         │       │ 							 																								    			     ^^^
+  ^^^
+    1691   1691 │ 	 │ 																															disab		disabled={isled={isPast}
+ Past}
+    1692   1692 │ 		 │ 																															classN	className={`
+ame={`
+  
+  i   
+  i This is This is the sourthe source of thce of the key vae key value.
+  lue.
+  
+
+    1    1673 │ 673 │ 																	{/									{/* Calendar * Calendar days */}
+  days */}
+    1674 │   1674 │ 																							<div cl			<div className="gassName="grid grid-rid grid-cols-7 cols-7 gap-1"gap-1">
+  > 1>
+  > 1675 │ 675 │ 																											{calen	{calendarDaysdarDays.map((d.map((day, idxay, idx) => {
+) => {
+                │ 			  │ 																						    			                                      ^      ^^^
+    ^^
+    1676 │ 1676 │ 																											con			const datest dateStr = dStr = day.formay.format("YYYat("YYYY-MM-DDY-MM-DD");
+    ");
+    1677 │ 1677 │ 																											cons			const isSelt isSelected =ected = select selectedBlockedBlockOutDateOutDates.some(s.some(
+  
+  
+  
+  i The oi The order of rder of the itemthe items may chs may change, anange, and this ad this also affelso affects perfcts performancesormances and com and component sponent state.
+ tate.
+  
+  i  
+  i Check thCheck the React e React documentdocumentation. ation. 
+  
+
+
+  
+
+src/routsrc/routes/indexes/index.tsx.tsx:246:1:246:13 parse3 parse ━━━ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━
+
+  × Exp  × Expected coected correspondrresponding JSX ing JSX closing closing tag for tag for 'div'.
+ 'div'.
+  
+ 
+    244    244 │ 		 │ 						cla				className=ssName="md:hidden ab"md:hidden absolute topsolute top-16 ins-16 inset-x-0 et-x-0 bg-backbg-background/ground/95 back95 backdrop-bldrop-blur-lg bur-lg border-border-b"
+    2"
+    245 │ 45 │ 					>					>
+  > 24
+  > 246 │  6 │                    <di    <div classv className="cName="containeontainer py-4 r py-4 flex fflex flex-colex-col gap-l gap-4">
+   4">
+        │       │                    ^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^
+    247 │  247 │ 											{/* 			{/* biome-ibiome-ignore lgnore lint/a11int/a11y/useVay/useValidAnchlidAnchor: reaor: real in-pal in-page fragge fragment nment navigatiavigation; onCon; onClick onlick only closly closes the es the mobilemobile menu a menu as a sids a side effece effect */}
+ t */}
+    248 │   248 │ 			 							
+  				
+  
+  i O
+  i Opening tpening tag
+  
+ag
+  
+    2    244 │ 44 │ 						c						classNamlassName="md:he="md:hidden aidden absolutebsolute top-16 top-16 inset- inset-x-0 bg-x-0 bg-backgrobackground/95und/95 backdr backdrop-blurop-blur-lg bor-lg border-b"
+der-b"
+    245     245 │ 			│ 					>
+  >		>
+  > 246 │  246 │                         <div cl<div classNameassName="conta="container pyiner py-4 flex-4 flex flex-c flex-col gap-ol gap-4">
+   4">
+        │      │                    ^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^
+    247 │ 247 │ 												{/* 		{/* biome-biome-ignore ignore lint/a1lint/a11y/useV1y/useValidAncalidAnchor: rehor: real in-pal in-page fraage fragment ngment navigatiavigation; onCon; onClick onlick only closly closes the es the mobile mobile menu asmenu as a side a side effect effect */}
+   */}
+    248 │   248 │ 											
+  
+			
+  
+  i clo  i closing tagsing tag
+  
+
+  
+    25    252 │ 		2 │ 							>					>
+    25
+    253 │ 	3 │ 															FeatureFeatures
+  > 2s
+  > 254 │ 54 │ 														</a>
+  </a>
+        │       │ 														^^^^
+  ^^^^
+    255 │   255 │ 											{/*			{/* biome- biome-ignore ignore lint/a1lint/a11y/useV1y/useValidAncalidAnchor: rehor: real in-pal in-page fragmeage fragment navigatnt navigation; onClion; onClick only closes the mobile menu as a side effect */}
+    256 │ 							
+  
+
+src/routes/index.tsxick only closes the mobile menu as a side effect */}
+    256 │ 							
+  
+
+src/routes/index.tsx:240:6 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━:240:6 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+
+  × E  × Expected xpected correspocorresponding JSXnding JSX closing closing tag for tag for 'motion 'motion.div'.
+.div'.
+  
+  
+    238 │ 				</div>
+    239 │ 				{mobileMenuOpen && (
+  > 240 │ 					<motion.div
+        │ 					^^^^^^^^^^^
+  > 241 │     238 │ 				</div>
+    239 │ 				{mobileMenuOpen && (
+  > 240 │ 					<motion.div
+        │ 					^^^^^^^^^^^
+  > 241 │ 						initial={{ opacity: 0, y: -20 }}
+						initial={{ opacity: 0, y: -20 }}
+  > 242 │ 						animate=  > 242 │ 						animate={{ opac{{ opacity: 1,ity: 1, y: 0 } y: 0 }}
+  > 2}
+  > 243 │ 43 │ 						e						exit={{ xit={{ opacityopacity: 0, y:: 0, y: -20 }} -20 }}
+  > 244
+  > 244 │ 	 │ 						c					classNamlassName="md:he="md:hidden aidden absolutebsolute top-16 top-16 inset- inset-x-0 bg-x-0 bg-backgrobackground/95 und/95 backdrobackdrop-blur-p-blur-lg bordlg border-b"
+ er-b"
+  > 245  > 245 │ 			│ 					>
+   		>
+        │      │ 					^
+					^
+    246     246 │   │                    <div   <div classN className="coame="containerntainer py-4 f py-4 flex flelex flex-col gx-col gap-4">
+ap-4">
+    247     247 │ 							{/* biome-│ 							{/* biome-ignore linignore lint/a11y/t/a11y/useValiuseValidAnchordAnchor: real : real in-pagein-page fragme fragment navint navigation;gation; onClic onClick only k only closes closes the mobthe mobile menile menu as a u as a side efside effect */fect */}
+  
+ }
+  
+  i Ope i Opening tagning tag
+  
+
+  
+    238 │ 				</div>
+    239 │ 				{mobileMenuOpen && (
+  > 240 │ 					<motion.div
+        │ 					^^^^^^^^^^^
+  > 241 │ 						initial={{ opacity: 0    238 │ 				</div>
+    239 │ 				{mobileMenuOpen && (
+  > 240 │ 					<motion.div
+        │ 					^^^^^^^^^^^
+  > 241 │ 						initial={{ opacity: 0, y: -20 }}
+  > 242 │ 		, y: -20 }}
+  > 242 │ 						ani				animate={{mate={{ opacit opacity: 1, yy: 1, y: 0 }}
+: 0 }}
+  > 243   > 243 │ 			│ 						exit			exit={{ opa={{ opacity: 0city: 0, y: -2, y: -20 }}
+  0 }}
+  > 244 │ > 244 │ 										class		className="mName="md:hidded:hidden absoln absolute topute top-16 ins-16 inset-x-0 et-x-0 bg-backbg-background/ground/95 back95 backdrop-bludrop-blur-lg bor-lg border-b"rder-b"
+  > 24
+  > 245 │ 	5 │ 					>
+ 				>
+        │       │ 					^ 					^
+    246
+    246 │    │                   <di    <div classv className="cName="containeontainer py-4 r py-4 flex flflex flex-col ex-col gap-4">gap-4">
+    247
+    247 │ 	 │ 							{						{/* biom/* biome-ignore-ignore lint/e lint/a11y/usa11y/useValidAeValidAnchor: nchor: real in-pagreal in-page fragment ne fragment navigatiavigation; onCon; onClick onlick only closly closes the es the mobile mobile menu asmenu as a side a side effect effect */}
+   */}
+  
+  i
+  i closin closing tag
+ g tag
+  
+ 
+    260 │ 							>
+    261 │ 								Testimonials
+  > 262 │ 							</a>
+        │ 							^^^^
+    263 │ 							{/* biome-ignore lint/a11y/useValidAnchor: real in-page fragment navigation; onClick only closes the mobile menu as a side    260 │ 							>
+    261 │ 								Testimonials
+  > 262 │ 							</a>
+        │ 							^^^^
+    263 │ 							{/* biome-ignore lint/a11y/useValidAnchor: real in-page fragment navigation; onClick only closes the mobile menu as a side effect */}
+    264 │ 		 effect */}
+    264 │ 							
+ 					
+  
+
+ 
+
+src/routsrc/routes/indexes/index.tsx.tsx:252:8 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━:252:8 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ━━
+
+  × Unex × Unexpected tpected token. Dioken. Did you mead you mean `{'>'}n `{'>'}` or `&g` or `&gt;`?
+  
+t;`?
+  
+    250    250 │ 		 │ 								c						classNamlassName="py-2e="py-2 text-s text-sm font-m font-medium"medium"
+    251
+    251 │ 		 │ 								o						onClick=nClick={() => {() => setMobisetMobileMenuOleMenuOpen(falpen(false)}
+  se)}
+  > 252 │> 252 │ 			 							>
+ 				>
+        │       │ 						 							^
+    	^
+    253 │ 253 │ 														Featu		Features
+   res
+    254 │  254 │ 												</a>
+		</a>
+  
+
+  
+
+src/routsrc/routes/indexes/index.tsx.tsx:260:8 :260:8 parse parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ×
+
+  × Unexpec Unexpected toketed token. Did yn. Did you mean ou mean `{'>'}` `{'>'}` or `&gt;or `&gt;`?
+  
+`?
+  
+    2    258 │ 	58 │ 															classNaclassName="py-me="py-2 text-2 text-sm fontsm font-medium-medium"
+    25"
+    259 │ 	9 │ 															onClickonClick={() =>={() => setMob setMobileMenuileMenuOpen(faOpen(false)}
+ lse)}
+  > 260  > 260 │ 		│ 							>					>
+      
+        │ 				  │ 							^
+  			^
+    261 │   261 │ 													Test			Testimonialimonials
+    2s
+    262 │ 62 │ 														</a>
+  </a>
+  
+
+src
+
+src/routes//routes/index.tsindex.tsxx:263::263:8 parse 8 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × expec━━━
+
+  × expected `)` but ted `)` but instead instead found `{found `{`
+  
+`
+  
+    26    261 │ 		1 │ 														TestimoTestimonials
+ nials
+    262    262 │ 			│ 							</a				</a>
+  > 2>
+  > 263 │ 63 │ 														{/* bio{/* biome-ignome-ignore lintre lint/a11y/u/a11y/useValidseValidAnchor:Anchor: real i real in-page n-page fragmenfragment navigt navigation; ation; onClickonClick only c only closes tloses the mobihe mobile menule menu as a s as a side effide effect */}ect */}
+      
+        │ 				  │ 							^
+  			^
+    264 │   264 │ 												
+    		
+    265 │ 265 │ 														href=		href="#contr"#contributorsibutors"
+  
+  "
+  
+  i Removi Remove {
+  
+
+e {
+  
+
+src/rosrc/routes/indeutes/index.tsxx.tsx:145::145:4 parse 4 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  × Exp  × Expected coected correspondrresponding JSX ing JSX closing closing tag for tag for 'header''header'.
+  
+.
+  
+    14    143 │ 	3 │ 		<div c	<div classNamlassName="flexe="flex min-h- min-h-[100dvh[100dvh] flex-] flex-col">
+ col">
+    144    144 │ 			│ 			{/* Hea{/* Header */der */}
+  > }
+  > 145 │ 145 │ 			<he			<header
+  ader
+        │       │ 			^^^^			^^^^^^^
+  >^^^
+  > 146 │  146 │ 				c				classNamelassName={`stic={`sticky top-ky top-0 z-50 0 z-50 w-full w-full backdrobackdrop-blur-p-blur-lg tranlg transition-sition-all durall duration-3ation-300 ${is00 ${isScrolleScrolled ? "bgd ? "bg-backgr-background/80ound/80 shadow shadow-sm" : -sm" : "bg-tra"bg-transparennsparent"}`}
+t"}`}
+  > 147  > 147 │ 		 │ 			>
+    	>
+        │ 	    │ 			^
+   		^
+    148 │  148 │ 				<				<div cladiv className=ssName="contai"container flener flex h-16 x h-16 items-ceitems-center junter justify-bstify-between"etween">
+    14>
+    149 │ 	9 │ 					<d				<div clasiv className="sName="flex itflex items-cenems-center gapter gap-2 font-2 font-bold">-bold">
+  
+  i
+  
+  i Opening Opening tag
+  
+ tag
+  
+    143    143 │ 		 │ 		<div c<div classNamlassName="flexe="flex min-h- min-h-[100dvh[100dvh] flex-] flex-col">
+ col">
+    144    144 │ 		│ 			{/* H	{/* Header *eader */}
+  > /}
+  > 145 │ 145 │ 			<he			<header
+  ader
+        │      │ 			^^^ 			^^^^^^^
+  ^^^^
+  > 146 │> 146 │ 		 				clas		className={sName={`sticky`sticky top-0  top-0 z-50 w-z-50 w-full bafull backdrop-ckdrop-blur-lgblur-lg transi transition-altion-all duratl duration-300ion-300 ${isSc ${isScrolled rolled ? "bg-b? "bg-backgrouackground/80 snd/80 shadow-shadow-sm" : "bm" : "bg-transg-transparent"parent"}`}
+  >}`}
+  > 147 │  147 │ 			>
+ 			>
+        │       │ 			^
+  			^
+    148    148 │ 		│ 				<div 		<div classNaclassName="conme="container tainer flex h-flex h-16 item16 items-centes-center justir justify-betwfy-between">
+ een">
+    149 │   149 │ 					<div  					<div classNaclassName="fleme="flex itemsx items-center-center gap-2  gap-2 font-bofont-bold">
+  ld">
+  
+  i cl
+  i closing taosing tag
+  
+g
+  
+    2    268 │ 	68 │ 							>						>
+    26
+    269 │ 	9 │ 															ContribContributors
+ utors
+  > 270  > 270 │ 			│ 							</				</a>
+    a>
+        │ 	    │ 							^						^^^^
+   ^^^
+    271 │  271 │ 												{/* b		{/* biome-igiome-ignore linore lint/a11ynt/a11y/useVal/useValidAnchoidAnchor: realr: real in-pag in-page fragme fragment navent navigationigation; onCli; onClick onlyck only closes closes the mo the mobile mebile menu as anu as a side e side effect *ffect */}
+    /}
+    272 │ 272 │ 													
+  
+	
+  
+
+s
+src/routesrc/routes/index.ts/index.tsxx:143::143:3 parse 3 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ━━━
+
+  × Expe × Expected corrcted correspondingesponding JSX clo JSX closing tagsing tag for 'di for 'div'.
+  
+v'.
+  
+    1    142 │ 	42 │ 	returnreturn (
+  > (
+  > 143 │  143 │ 		<di		<div classv className="fName="flex milex min-h-[10n-h-[100dvh] f0dvh] flex-collex-col">
+     ">
+        │ 		   │ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ^^^^
+    144 │  144 │ 			{/			{/* Heade* Header */}
+ r */}
+    145 │   145 │ 			< 			<header
+header
+  
+  i   
+  i Opening Opening tag
+  
+tag
+  
+    14    142 │ 	2 │ 	return return (
+  > 1(
+  > 143 │ 43 │ 		<div 		<div classNaclassName="fleme="flex min-hx min-h-[100dv-[100dvh] flexh] flex-col">
+-col">
+               │ 		^ │ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ^^^
+    144 │ 144 │ 			{/*			{/* Header Header */}
+   */}
+    145 │   145 │ 			<			<header
+header
+  
+  i   
+  i closing closing tag
+  
+tag
+  
+    2    276 │ 		76 │ 							>
+					>
+    277     277 │ 		│ 														FAQ
+  >FAQ
+  > 278 │  278 │ 												</a>
+		</a>
+                │ 						│ 							^^^^
+ 	^^^^
+    279 │   279 │ 			 							<d				<div
+    iv
+    280 │ 280 │ 	class	className =Name =
+  
+
+  
+
+src/
+src/routes/iroutes/index.tsxndex.tsx:268::268:8 parse 8 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ━━
+
+  × Unexpe× Unexpected tokcted token. Did en. Did you meanyou mean `{'>'}` `{'>'}` or `&gt or `&gt;`?
+  
+;`?
+  
+    26    266 │ 	6 │ 														class	className="pName="py-2 texy-2 text-sm fot-sm font-medint-medium"
+   um"
+    267 │  267 │ 													onCl			onClick={()ick={() => set => setMobileMMobileMenuOpenenuOpen(false)(false)}
+  > }
+  > 268 │ 268 │ 													>
+    	>
+        │ 	    │ 							^						^
+    269
+    269 │ 		 │ 								C						Contribuontributors
+  tors
+    270 │   270 │ 												</a>
+		</a>
+  
+
+s  
+
+src/routerc/routes/index.s/index.tsxtsx:276:8:276:8 parse  parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ×━
+
+  × Unexpec Unexpected toketed token. Did yn. Did you mean ou mean `{'>'}` o`{'>'}` or `&gt;`?
+  r `&gt;`?
+  
+
+    2    274 │ 74 │ 															classN	className="pyame="py-2 text-2 text-sm fon-sm font-mediut-medium"
+    m"
+    275 │ 275 │ 														onCli		onClick={() ck={() => setM=> setMobileMeobileMenuOpen(nuOpen(false)}false)}
+  > 27
+  > 276 │ 	6 │ 							>						>
+      
+        │ 			  │ 							^
+ 				^
+    277    277 │ 		│ 														FAQ
+   FAQ
+    278 │  278 │ 													</a>
+ 	</a>
+  
+
+sr 
+
+src/routesc/routes/index.t/index.tsxsx:280::280:2 parse 2 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━
+
+  × ex  × expected `pected `)` but i)` but instead fnstead found `clound `className`assName`
+  
+
+  
+    2    278 │ 	78 │ 							<						</a>
+   /a>
+    279 │  279 │ 													<div
+	<div
+  > 280  > 280 │ 	 │ 	classNaclassName =
+  me =
+        │       │ 	^^^^^^	^^^^^^^^^
+   ^^^
+    281 │  281 │ 		"fl		"flex flexex flex-col ga-col gap-2 pt-p-2 pt-2 borde2 border-t" >
+r-t" >
+    282     282 │ 		(│ 		(
+  
+  i
+  
+  i Remove Remove classNa className
+  
+
+me
+  
+
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+
+  
+

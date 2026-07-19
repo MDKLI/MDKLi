@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { SettingsBranches } from '@/features/settings/branches'
+import { createFileRoute } from "@tanstack/react-router";
+import { SettingsBranches } from "@/features/settings/branches";
 
-export const Route = createFileRoute('/_authenticated/settings/branches')({
-  component: SettingsBranches,
-})
+export const Route = createFileRoute("/_authenticated/settings/branches")({
+	component: SettingsBranches,
+});

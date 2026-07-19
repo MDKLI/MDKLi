@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { DoctorInvitationsPage } from '@/features/invitations'
+import { createFileRoute } from "@tanstack/react-router";
+import { DoctorInvitationsPage } from "@/features/invitations";
 
-export const Route = createFileRoute('/_authenticated/my-invitations')({
-  component: MyInvitationsRoute,
-})
+export const Route = createFileRoute("/_authenticated/my-invitations")({
+	component: MyInvitationsRoute,
+});
 
 function MyInvitationsRoute() {
-  return <DoctorInvitationsPage />
+	return <DoctorInvitationsPage />;
 }
