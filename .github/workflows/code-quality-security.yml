@@ -17,7 +17,7 @@ jobs:
   # Lint + Type Check + Build, per service (matrix)
   lint-typecheck-build:
     name: ${{ matrix.service.name }} / lint, typecheck, build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +69,7 @@ jobs:
   # CodeQL - static analysis (JS/TS across the whole repo)
   codeql:
     name: CodeQL
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     permissions:
       contents: read
       security-events: write
@@ -95,7 +95,7 @@ jobs:
   # Semgrep - SAST rules
   semgrep:
     name: Semgrep
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     permissions:
       contents: read
       security-events: write
@@ -126,7 +126,7 @@ jobs:
   # Gitleaks - secret scanning
   gitleaks:
     name: Gitleaks
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     permissions:
       contents: read
     container:
@@ -142,7 +142,7 @@ jobs:
   # OSV Scanner - dependency vulnerability scanning
   osv-scanner:
     name: OSV Scanner
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     permissions:
       contents: read
       security-events: write
@@ -170,7 +170,7 @@ jobs:
   # npm audit, per service (matrix)
   npm-audit:
     name: ${{ matrix.service.name }} / npm audit
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     strategy:
       fail-fast: false
       matrix:
@@ -210,7 +210,7 @@ jobs:
   # OpenSSF Scorecard - supply chain security posture
   scorecard:
     name: OpenSSF Scorecard
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, mdkli]
     if: github.event_name != 'pull_request'
     permissions:
       contents: read
