@@ -85,23 +85,28 @@ export function VerificationTabs() {
 				ListResult<VerificationItem>,
 				ListResult<BlockedItem>,
 			] = await Promise.all([
-				verificationApi.listDoctors("pending", search || undefined),
-				verificationApi.listFacilities(
+				verificationApi.listDoctors<ListResult<VerificationItem>>(
+					"pending",
+					search || undefined,
+				),
+				verificationApi.listFacilities<ListResult<VerificationItem>>(
 					"hospitals",
 					"pending",
 					search || undefined,
 				),
-				verificationApi.listFacilities(
+				verificationApi.listFacilities<ListResult<VerificationItem>>(
 					"medical-centers",
 					"pending",
 					search || undefined,
 				),
-				verificationApi.listFacilities(
+				verificationApi.listFacilities<ListResult<VerificationItem>>(
 					"pharmacies",
 					"pending",
 					search || undefined,
 				),
-				verificationApi.listBlocked(search || undefined),
+				verificationApi.listBlocked<ListResult<BlockedItem>>(
+					search || undefined,
+				),
 			]);
 
 			setDoctors(docsRes.data?.data || docsRes.data || []);

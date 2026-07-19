@@ -225,7 +225,7 @@ export function SettingsBranches() {
 					} else {
 						toast.error(result?.error || "Failed to leave branch");
 					}
-				} catch {
+				} catch (error) {
 					toast.error("Failed to leave branch");
 				}
 			},
@@ -360,7 +360,7 @@ export function SettingsBranches() {
 							if (mediaUrl.includes("minio")) {
 								try {
 									await mediaApi.deleteBranchMedia(branchId, mediaUrl);
-								} catch {
+								} catch (error) {
 									console.error("Error deleting media:", error);
 								}
 							}
@@ -597,7 +597,7 @@ export function SettingsBranches() {
 															Branch Photos:
 														</p>
 														<div className="flex flex-wrap gap-2">
-															{branch.mediaUrls.map((url) => (
+															{branch.mediaUrls.map((url, index) => (
 																<button
 																	key={url}
 																	type="button"

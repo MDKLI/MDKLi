@@ -267,13 +267,11 @@ export const authApi = {
 
 // Profile API
 export const profileApi = {
-	getProfile: () =>
-		apiClient("/api/profile/me", {
-			method: "GET",
-		}),
+	getProfile: <T = unknown>() =>
+		apiClient<T>("/api/profile/me", { method: "GET" }),
 
-	updateProfile: (data: Record<string, unknown>) =>
-		apiClient("/api/profile/me", {
+	updateProfile: <T = unknown>(data: Record<string, unknown>) =>
+		apiClient<T>("/api/profile/me", {
 			method: "PUT",
 			body: JSON.stringify(data),
 		}),
@@ -289,7 +287,6 @@ export const profileApi = {
 			method: "DELETE",
 		}),
 
-	// Delete a branch
 	deleteBranch: (branchId: string) =>
 		apiClient<{ message: string }>(`/api/profile/branches/${branchId}`, {
 			method: "DELETE",
@@ -432,19 +429,21 @@ export const invitationApi = {
 
 // Verification API
 export const verificationApi = {
-	// List doctors pending/verified/rejected
-	listDoctors: (status = "pending", search?: string, page?: number) => {
+	listDoctors: <T = unknown>(
+		status = "pending",
+		search?: string,
+		page?: number,
+	) => {
 		const params: Record<string, string> = { status };
 		if (search) params.search = search;
 		if (page !== undefined) params.page = String(page);
-		return adminApiClient(`/admin/verifications/doctors`, {
+		return adminApiClient<T>(`/admin/verifications/doctors`, {
 			method: "GET",
 			params,
 		});
 	},
 
-	// List facilities by category: 'hospitals' | 'medical-centers' | 'pharmacies'
-	listFacilities: (
+	listFacilities: <T = unknown>(
 		category: string,
 		status = "pending",
 		search?: string,
@@ -453,39 +452,34 @@ export const verificationApi = {
 		const params: Record<string, string> = { status };
 		if (search) params.search = search;
 		if (page !== undefined) params.page = String(page);
-		return adminApiClient(`/admin/verifications/facilities/${category}`, {
+		return adminApiClient<T>(`/admin/verifications/facilities/${category}`, {
 			method: "GET",
 			params,
 		});
 	},
 
-	// Verify a doctor
 	verifyDoctor: (doctorId: string) =>
 		adminApiClient(`/admin/verifications/doctors/${doctorId}/verify`, {
 			method: "PATCH",
 		}),
 
-	// Reject a doctor with optional reason
 	rejectDoctor: (doctorId: string, reason?: string) =>
 		adminApiClient(`/admin/verifications/doctors/${doctorId}/reject`, {
 			method: "PATCH",
 			body: JSON.stringify({ reason }),
 		}),
 
-	// Verify a facility (pass facility id)
 	verifyFacility: (facilityId: string) =>
 		adminApiClient(`/admin/verifications/facilities/${facilityId}/verify`, {
 			method: "PATCH",
 		}),
 
-	// Reject a facility with reason
 	rejectFacility: (facilityId: string, reason?: string) =>
 		adminApiClient(`/admin/verifications/facilities/${facilityId}/reject`, {
 			method: "PATCH",
 			body: JSON.stringify({ reason }),
 		}),
 
-	// Block / Unblock users (admin actions)
 	blockUser: (userId: string) =>
 		adminApiClient(`/admin/verifications/users/${userId}/block`, {
 			method: "PATCH",
@@ -495,7 +489,6 @@ export const verificationApi = {
 			method: "PATCH",
 		}),
 
-	// List blocked users
 	listBlocked: (search?: string, page?: number) => {
 		const params: Record<string, string> = {};
 		if (search) params.search = search;

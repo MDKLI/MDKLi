@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Calendar, FileText, Mail, MapPin, User } from "lucide-react";
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
 				selectedBranch.id,
 			);
 			if (response.data?.success) {
-				setAvailability(response.data.data);
+				setAvailability(response.data.data as DayAvailability[]);
 			} else {
 				setAvailability([]);
 			}

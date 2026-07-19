@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npx @biomejs/biome format --write .
+
       - name: Biome
         run: npx @biomejs/biome check .
 
