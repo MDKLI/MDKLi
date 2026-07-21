@@ -16,7 +16,7 @@ env:
 jobs:
   lint-typecheck-build:
     name: ${{ matrix.service.name }} / lint, typecheck, build
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -61,7 +61,7 @@ jobs:
 
   codeql:
     name: CodeQL
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
@@ -84,7 +84,7 @@ jobs:
 
   semgrep:
     name: Semgrep
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
@@ -114,7 +114,7 @@ jobs:
 
   gitleaks:
     name: Gitleaks
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     container:
@@ -129,7 +129,7 @@ jobs:
 
   osv-scanner:
     name: OSV Scanner
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
@@ -166,7 +166,7 @@ jobs:
 
   npm-audit:
     name: ${{ matrix.service.name }} / npm audit
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -205,7 +205,7 @@ jobs:
 
   scorecard:
     name: OpenSSF Scorecard
-    runs-on: [self-hosted, linux, x64, mdkli]
+    runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     permissions:
       contents: read
