@@ -18,7 +18,8 @@ FROM node:24-alpine
 WORKDIR /app
 
 RUN apk update && apk add --no-cache openssl=3.5.7-r0 \
-  && addgroup -S appgroup && adduser -S appuser -G appgroup
+  && addgroup -S appgroup && adduser -S appuser -G appgroup \
+  && npm install -g npm@latest
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
