@@ -60,5 +60,8 @@
 		"speakeasy": "^2.0.0",
 		"typeorm": "^0.3.21",
 		"winston": "^3.17.0"
-	}
+	},
+  "overrides": {
+    "sha.js": "2.4.12"
+  }
 }
