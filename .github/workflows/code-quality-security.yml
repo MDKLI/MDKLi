@@ -86,10 +86,10 @@ jobs:
         run: pnpm exec biome check --write .
 
       - name: TypeScript type check
-        run: pnpm run typecheck --if-present || pnpm exec tsc --noEmit
+        run: pnpm run --if-present typecheck || pnpm exec tsc --noEmit
 
       - name: Build
-        run: pnpm run build --if-present
+        run: pnpm run --if-present build
 
   codeql:
     name: CodeQL
