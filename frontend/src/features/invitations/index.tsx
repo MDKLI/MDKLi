@@ -58,11 +58,12 @@ export function DoctorInvitationsPage() {
 	const [processingId, setProcessingId] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("pending");
 
-	const loadInvitations = useCallback(async () => {
+  const loadInvitations = useCallback(async () => {
 		try {
 			const result = await invitationApi.getDoctorInvitations();
-			if (result?.data?.data || result?.data) {
-				setInvitations(result?.data?.data || result?.data);
+			const list = result?.data?.data;
+			if (list) {
+				setInvitations(list as Invitation[]);
 			}
 		} catch {
 			toast.error("Failed to load invitations");

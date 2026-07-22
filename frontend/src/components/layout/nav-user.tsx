@@ -48,9 +48,11 @@ export function NavUser({ user }: NavUserProps) {
 
 	const [facilityType, setFacilityType] = useState<string | null>(null);
 
-	const loadFacilityProfile = useCallback(async () => {
+  const loadFacilityProfile = useCallback(async () => {
 		try {
-			const result = await profileApi.getProfile();
+			const result = await profileApi.getProfile<{
+				facility_type?: string;
+			}>();
 			const profile = result?.data;
 			setFacilityType(profile?.facility_type || null);
 		} catch (error) {

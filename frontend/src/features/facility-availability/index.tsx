@@ -70,6 +70,13 @@ interface RawOverride {
 	reason?: string;
 }
 
+interface RawAvailabilityRule {
+	id?: string;
+	dayOfWeek: number | string;
+	startTime: string;
+	endTime: string;
+}
+
 const DAYS_OF_WEEK = [
 	{ value: 0, label: "Sunday", short: "SUN" },
 	{ value: 1, label: "Monday", short: "MON" },
@@ -136,9 +143,8 @@ export function FacilityAvailability() {
 				return;
 			}
 
-			const result: { data?: { data?: Branch[] } } =
-				await invitationApi.getFacilityBranches(facilityId);
-			const list = result?.data?.data || [];
+    const result = await invitationApi.getFacilityBranches(facilityId);
+			const list = (result?.data?.data || []) as Branch[];
 			setBranches(
 				list.map((b) => ({
 					id: b.id,
@@ -156,9 +162,8 @@ export function FacilityAvailability() {
 	const loadBranchDoctors = useCallback(async (branchId: string) => {
 		setDoctorsLoading(true);
 		try {
-			const result: { data?: { data?: BranchDoctor[] } } =
-				await invitationApi.getBranchDoctors(branchId);
-			const list = result?.data?.data || [];
+    const result = await invitationApi.getBranchDoctors(branchId);
+			const list = (result?.data?.data || []) as BranchDoctor[];
 			setDoctors(
 				list.map((d) => ({
 					id: d.id,
@@ -186,12 +191,13 @@ export function FacilityAvailability() {
 					return;
 				}
 
-				const schedule: WeeklySchedule = {};
+      const schedule: WeeklySchedule = {};
 				DAYS_OF_WEEK.forEach((day) => {
 					schedule[day.value] = { enabled: false, slots: [] };
 				});
 
-				for (const rule of result.data.data) {
+				const rules = (result.data.data || []) as RawAvailabilityRule[];
+				for (const rule of rules) {
 					const day = Number(rule.dayOfWeek);
 					if (Number.isNaN(day) || !schedule[day]) continue;
 					schedule[day].enabled = true;
@@ -221,9 +227,10 @@ export function FacilityAvailability() {
 					return;
 				}
 
-				const mapped = (result.data.data || [])
-					.filter((o: RawOverride) => o.type === "BLOCK")
-					.map((o: RawOverride) => ({
+        const overrides = (result.data.data || []) as RawOverride[];
+				const mapped = overrides
+					.filter((o) => o.type === "BLOCK")
+					.map((o) => ({
 						id: o.id,
 						date: moment(o.date).format("YYYY-MM-DD"),
 						reason: o.reason || undefined,

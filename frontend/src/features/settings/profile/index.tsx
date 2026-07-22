@@ -348,7 +348,7 @@ export function SettingsProfile() {
 				// Handle both snake_case and camelCase from backend
 				const mappedData: ProfileData = {
 					id: data.id || data.user_id || user?.id,
-					userId: data.user_id || data.userId || data.user?.id,
+          userId: data.user_id || data.user?.id,
 					username: data.username || data.user?.username || user?.username,
 					email: data.user?.email || data.email || user?.email,
 					role: data.role || userRole,

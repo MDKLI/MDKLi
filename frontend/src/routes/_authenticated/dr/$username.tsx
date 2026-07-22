@@ -47,6 +47,7 @@ interface DoctorDetails {
 }
 
 interface DoctorBranch {
+	id?: string;
 	facility_name?: string;
 	name?: string;
 	branch_type?: string;
@@ -87,7 +88,7 @@ function DoctorDetailPage() {
 		setViewerOpen(true);
 	};
 
-	const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
+  const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
 		try {
 			const response = await bookingApi.getDoctorBranchesForBooking(doctorId);
 			if (

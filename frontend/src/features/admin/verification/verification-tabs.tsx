@@ -41,10 +41,13 @@ type DisplayItem = VerificationItem & {
 	accountType?: string;
 };
 
-type ListResult<T> = {
-	data?: T[] | { data?: T[] };
-	error?: string;
-};
+type ListPayload<T> = T[] | { data?: T[] };
+
+function unwrapList<T>(payload: ListPayload<T> | undefined): T[] {
+	if (!payload) return [];
+	if (Array.isArray(payload)) return payload;
+	return payload.data ?? [];
+}
 
 type FacilityCategory = "hospitals" | "medical-centers" | "pharmacies";
 type ActiveTab = "doctors" | FacilityCategory | "blocked";
@@ -78,42 +81,37 @@ export function VerificationTabs() {
 	const fetchAll = useCallback(async () => {
 		setLoading(true);
 		try {
-			const [docsRes, hospRes, medRes, pharmRes, blockedRes]: [
-				ListResult<VerificationItem>,
-				ListResult<VerificationItem>,
-				ListResult<VerificationItem>,
-				ListResult<VerificationItem>,
-				ListResult<BlockedItem>,
-			] = await Promise.all([
-				verificationApi.listDoctors<ListResult<VerificationItem>>(
-					"pending",
-					search || undefined,
-				),
-				verificationApi.listFacilities<ListResult<VerificationItem>>(
-					"hospitals",
-					"pending",
-					search || undefined,
-				),
-				verificationApi.listFacilities<ListResult<VerificationItem>>(
-					"medical-centers",
-					"pending",
-					search || undefined,
-				),
-				verificationApi.listFacilities<ListResult<VerificationItem>>(
-					"pharmacies",
-					"pending",
-					search || undefined,
-				),
-				verificationApi.listBlocked<ListResult<BlockedItem>>(
-					search || undefined,
-				),
-			]);
+      const [docsRes, hospRes, medRes, pharmRes, blockedRes] =
+				await Promise.all([
+					verificationApi.listDoctors<ListPayload<VerificationItem>>(
+						"pending",
+						search || undefined,
+					),
+					verificationApi.listFacilities<ListPayload<VerificationItem>>(
+						"hospitals",
+						"pending",
+						search || undefined,
+					),
+					verificationApi.listFacilities<ListPayload<VerificationItem>>(
+						"medical-centers",
+						"pending",
+						search || undefined,
+					),
+					verificationApi.listFacilities<ListPayload<VerificationItem>>(
+						"pharmacies",
+						"pending",
+						search || undefined,
+					),
+					verificationApi.listBlocked<ListPayload<BlockedItem>>(
+						search || undefined,
+					),
+				]);
 
-			setDoctors(docsRes.data?.data || docsRes.data || []);
-			setHospitals(hospRes.data?.data || hospRes.data || []);
-			setMedicalCenters(medRes.data?.data || medRes.data || []);
-			setPharmacies(pharmRes.data?.data || pharmRes.data || []);
-			setBlocked(blockedRes.data?.data || blockedRes.data || []);
+			setDoctors(unwrapList(docsRes.data));
+			setHospitals(unwrapList(hospRes.data));
+			setMedicalCenters(unwrapList(medRes.data));
+			setPharmacies(unwrapList(pharmRes.data));
+			setBlocked(unwrapList(blockedRes.data));
 		} catch {
 			toast.error("Failed to fetch verification data");
 		} finally {
@@ -129,28 +127,29 @@ export function VerificationTabs() {
 	) => {
 		setLoading(true);
 		try {
-			if (category === "doctors") {
-				const res: ListResult<VerificationItem> =
-					await verificationApi.listDoctors("pending", search || undefined);
-				setDoctors(res.data?.data || res.data || []);
-			} else if (category === "blocked") {
-				const res: ListResult<BlockedItem> = await verificationApi.listBlocked(
+      if (category === "doctors") {
+				const res = await verificationApi.listDoctors<ListPayload<VerificationItem>>(
+					"pending",
 					search || undefined,
 				);
-				setBlocked(res.data?.data || res.data || []);
+				setDoctors(unwrapList(res.data));
+			} else if (category === "blocked") {
+				const res = await verificationApi.listBlocked<ListPayload<BlockedItem>>(
+					search || undefined,
+				);
+				setBlocked(unwrapList(res.data));
 			} else {
-				const res: ListResult<VerificationItem> =
-					await verificationApi.listFacilities(
-						category,
-						"pending",
-						search || undefined,
-					);
+				const res = await verificationApi.listFacilities<ListPayload<VerificationItem>>(
+					category,
+					"pending",
+					search || undefined,
+				);
 				const setMap: Record<string, (v: VerificationItem[]) => void> = {
 					hospitals: setHospitals,
 					"medical-centers": setMedicalCenters,
 					pharmacies: setPharmacies,
 				};
-				setMap[category](res.data?.data || res.data || []);
+				setMap[category](unwrapList(res.data));
 			}
 		} catch {
 			toast.error("Search failed");
@@ -236,7 +235,7 @@ export function VerificationTabs() {
 			item.displayName ||
 			item.facility_name ||
 			item.name;
-		const photo = item.photo_url || item.photoUrl || null;
+    const photo = item.photo_url || item.photoUrl || undefined;
 		const userId = item.user_id || item.userId || item.id;
 		const email = item.email || "-";
 
@@ -500,8 +499,8 @@ export function VerificationTabs() {
 								>
 									<div className="flex items-center gap-4">
 										<Avatar className="h-12 w-12">
-											<AvatarImage
-												src={b.photo_url || null}
+                      <AvatarImage
+												src={b.photo_url || undefined}
 												alt={b.displayName}
 											/>
 											<AvatarFallback>

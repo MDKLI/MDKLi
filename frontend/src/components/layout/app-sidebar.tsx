@@ -2,17 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { Languages, Search } from "lucide-react";
 import { useEffect } from "react";
 import { ThemeSwitch } from "@/components/theme-switch";
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarFooter,
-	SidebarHeader,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
-	SidebarRail,
-	useSidebar,
-} from "@/components/ui/sidebar";
 import { chatApi } from "@/lib/chat-api";
 import {
 	connectChatSocket,
@@ -28,10 +17,20 @@ import {
 } from "./data/sidebar-data";
 import { NavGroup } from "./nav-group";
 import { NavUser } from "./nav-user";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	useSidebar,
+} from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { auth } = useAuthStore();
-	const { setOpen } = useSidebar();
+  const { setOpen, toggleSidebar } = useSidebar();
 
 	useEffect(() => {
 		setOpen(true);
@@ -97,11 +96,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	return (
 		<Sidebar variant="floating" side="left" collapsible="icon" {...props}>
-			<SidebarHeader>
+      <SidebarHeader>
 				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" asChild>
-							<a href="/">
+          <SidebarMenuItem>
+            <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+              <button
+								type="button"
+								onClick={toggleSidebar}
+								className="flex flex-1 items-center gap-2 overflow-hidden text-left group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:justify-center"
+							>
 								<div className="flex aspect-square size-8 items-center justify-center shrink-0">
 									<img
 										src="/images/logo.png"
@@ -117,12 +120,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										Healthcare Platform
 									</span>
 								</div>
-							</a>
-						</SidebarMenuButton>
+              </button>
+						</div>
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
-
 			<SidebarContent>
 				{navGroups.map((group) => (
 					<NavGroup key={group.title} {...group} />
@@ -170,8 +172,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 				<NavUser user={userData} />
 			</SidebarFooter>
-
-			<SidebarRail />
 		</Sidebar>
 	);
 }

@@ -140,6 +140,13 @@ interface RawBooking {
 	branch?: { id: string; name: string };
 }
 
+interface RawAvailabilityRule {
+	id?: string;
+	dayOfWeek: number | string;
+	startTime: string;
+	endTime: string;
+}
+
 const DAYS_OF_WEEK = [
 	{ value: 0, label: "Sunday", short: "SUN" },
 	{ value: 1, label: "Monday", short: "MON" },
@@ -242,34 +249,34 @@ export function AvailabilitySettings() {
 			setSettingsLoading(true);
 			const result = await bookingApi.getDoctorSettings(doctorId);
 
-			if (result.data?.success) {
-				setSettings(result.data.data);
-			} else {
-				setSettings({
-					doctor_id: doctorId,
-					auto_accept_bookings: false,
-					notice_period_hours: 24,
-					daily_booking_limit: null,
-					weekly_booking_limit: null,
-					default_slot_duration_minutes: 30,
-					allow_same_day_bookings: true,
-					buffer_time_minutes: 0,
-					max_advance_booking_days: 90,
-				});
-			}
-		} catch {
-			setSettings({
-				doctor_id: doctorId,
-				auto_accept_bookings: false,
-				notice_period_hours: 24,
-				daily_booking_limit: null,
-				weekly_booking_limit: null,
-				default_slot_duration_minutes: 30,
-				allow_same_day_bookings: true,
-				buffer_time_minutes: 0,
-				max_advance_booking_days: 90,
-			});
-		} finally {
+        if (result.data?.success) {
+          setSettings(result.data.data as DoctorSettings);
+        } else {
+          setSettings({
+            doctor_id: doctorId,
+            auto_accept_bookings: false,
+            notice_period_hours: 24,
+            daily_booking_limit: null,
+            weekly_booking_limit: null,
+            default_slot_duration_minutes: 30,
+            allow_same_day_bookings: true,
+            buffer_time_minutes: 0,
+            max_advance_booking_days: 90,
+          });
+        }
+      } catch {
+        setSettings({
+          doctor_id: doctorId,
+          auto_accept_bookings: false,
+          notice_period_hours: 24,
+          daily_booking_limit: null,
+          weekly_booking_limit: null,
+          default_slot_duration_minutes: 30,
+          allow_same_day_bookings: true,
+          buffer_time_minutes: 0,
+          max_advance_booking_days: 90,
+        });
+      } finally {
 			setSettingsLoading(false);
 		}
 	}, [doctorId]);
@@ -305,12 +312,13 @@ export function AvailabilitySettings() {
 				return;
 			}
 
-			const schedule: WeeklySchedule = {};
+    const schedule: WeeklySchedule = {};
 			DAYS_OF_WEEK.forEach((day) => {
 				schedule[day.value] = { enabled: false, slots: [] };
 			});
 
-			for (const rule of result.data.data) {
+			const rules = (result.data.data || []) as RawAvailabilityRule[];
+			for (const rule of rules) {
 				const day = Number(rule.dayOfWeek);
 				if (Number.isNaN(day) || !schedule[day]) continue;
 				schedule[day].enabled = true;
@@ -335,9 +343,10 @@ export function AvailabilitySettings() {
 				return;
 			}
 
-			const mapped = (result.data.data || [])
-				.filter((override: RawOverride) => override.type === "BLOCK")
-				.map((override: RawOverride) => ({
+    const overrides = (result.data.data || []) as RawOverride[];
+			const mapped = overrides
+				.filter((override) => override.type === "BLOCK")
+				.map((override) => ({
 					id: override.id,
 					date: moment(override.date).format("YYYY-MM-DD"),
 					reason: override.reason || undefined,
@@ -372,8 +381,11 @@ export function AvailabilitySettings() {
 		try {
 			const result = await bookingApi.updateDoctorSettings(doctorId, updates);
 
-			if (result.data?.success) {
-				setSettings({ ...settings, ...result.data.data });
+      if (result.data?.success) {
+				setSettings({
+					...settings,
+					...(result.data.data as Partial<DoctorSettings>),
+				});
 				toast.success("Settings updated successfully");
 			} else {
 				toast.error("Failed to update settings");
@@ -596,24 +608,23 @@ export function AvailabilitySettings() {
 				setLoading(true);
 				try {
 					const response = await bookingApi.getPendingSessions(doctorId);
-					if (response.data?.success && response.data.data) {
-						const mappedSessions = response.data.data.map(
-							(booking: RawBooking) => ({
-								id: booking.id,
-								patientName: booking.patient?.name || "Unknown Patient",
-								patientEmail: booking.patient?.email || "",
-								date: booking.date,
-								startTime: booking.startTime,
-								endTime: booking.endTime,
-								status: String(
-									booking.status || "",
-								).toLowerCase() as Session["status"],
-								createdAt: booking.createdAt,
-								branchId: booking.branchId,
-								notes: booking.notes,
-								branch: booking.branch,
-							}),
-						);
+          if (response.data?.success && response.data.data) {
+						const rawBookings = response.data.data as RawBooking[];
+						const mappedSessions = rawBookings.map((booking) => ({
+							id: booking.id,
+							patientName: booking.patient?.name || "Unknown Patient",
+							patientEmail: booking.patient?.email || "",
+							date: booking.date,
+							startTime: booking.startTime,
+							endTime: booking.endTime,
+							status: String(
+								booking.status || "",
+							).toLowerCase() as Session["status"],
+							createdAt: booking.createdAt,
+							branchId: booking.branchId,
+							notes: booking.notes,
+							branch: booking.branch,
+						}));
 						setSessions(mappedSessions);
 					}
 				} catch (_error) {
@@ -688,8 +699,20 @@ export function AvailabilitySettings() {
 					doctorId || "",
 					session.branchId,
 				);
-				if (result.data?.success) {
-					setRescheduleDays(result.data.data);
+        if (result.data?.success) {
+					setRescheduleDays(
+						result.data.data as Array<{
+							date: string;
+							dayName: string;
+							dayNumber: number;
+							month: string;
+							slots: Array<{
+								start_time: string;
+								end_time: string;
+								is_available: boolean;
+							}>;
+						}>,
+					);
 				} else {
 					toast.error(result.error || "Failed to load availability");
 				}
@@ -995,24 +1018,23 @@ export function AvailabilitySettings() {
 						doctorId,
 						filter === "all" ? undefined : filter,
 					);
-					if (response.data?.success && response.data.data) {
-						const mappedHistory = response.data.data.map(
-							(booking: RawBooking) => ({
-								id: booking.id,
-								patientName: booking.patient?.name || "Unknown Patient",
-								patientEmail: booking.patient?.email || "",
-								date: booking.date,
-								startTime: booking.startTime,
-								endTime: booking.endTime,
-								status: String(
-									booking.status || "",
-								).toLowerCase() as Session["status"],
-								createdAt: booking.createdAt,
-								branchId: booking.branchId,
-								notes: booking.notes,
-								branch: booking.branch,
-							}),
-						);
+          if (response.data?.success && response.data.data) {
+						const rawBookings = response.data.data as RawBooking[];
+						const mappedHistory = rawBookings.map((booking) => ({
+							id: booking.id,
+							patientName: booking.patient?.name || "Unknown Patient",
+							patientEmail: booking.patient?.email || "",
+							date: booking.date,
+							startTime: booking.startTime,
+							endTime: booking.endTime,
+							status: String(
+								booking.status || "",
+							).toLowerCase() as Session["status"],
+							createdAt: booking.createdAt,
+							branchId: booking.branchId,
+							notes: booking.notes,
+							branch: booking.branch,
+						}));
 						setHistory(mappedHistory);
 					}
 				} catch (_error) {

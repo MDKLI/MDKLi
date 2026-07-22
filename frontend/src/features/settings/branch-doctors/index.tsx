@@ -50,9 +50,6 @@ interface ProfileApiResult {
 	data?: FacilityProfileData & { data?: FacilityProfileData };
 }
 
-interface ListApiResult<T> {
-	data?: { data?: T[] };
-}
 
 interface ActionResult {
 	data?: unknown;
@@ -64,23 +61,24 @@ export function BranchDoctorsPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [processingId, setProcessingId] = useState<string | null>(null);
 
-	const loadBranchDoctors = useCallback(async (fid: string) => {
+  const loadBranchDoctors = useCallback(async (fid: string) => {
 		try {
 			// First get facility branches
-			const branchesResult: ListApiResult<RawBranch> =
-				await invitationApi.getFacilityBranches(fid);
+			const branchesResult = await invitationApi.getFacilityBranches(fid);
 			if (branchesResult?.data?.data) {
-				const branchesData = branchesResult.data.data;
+				const branchesData = branchesResult.data.data as RawBranch[];
 
 				// For each branch, get the doctors
 				const branchesWithDoctors: Branch[] = await Promise.all(
 					branchesData.map(async (branch): Promise<Branch> => {
 						try {
-							const doctorsResult: ListApiResult<BranchDoctor> =
-								await invitationApi.getBranchDoctors(branch.id);
+							const doctorsResult = await invitationApi.getBranchDoctors(
+								branch.id,
+							);
 							return {
 								...branch,
-								doctors: doctorsResult?.data?.data || [],
+								doctors: (doctorsResult?.data?.data ||
+									[]) as BranchDoctor[],
 							};
 						} catch {
 							return {

@@ -58,10 +58,12 @@ export function DataTableBulkActions<TData>({
 	};
 
 	const handleKeyDown = (event: React.KeyboardEvent) => {
-		const buttons = toolbarRef.current?.querySelectorAll("button");
+    const buttons = toolbarRef.current?.querySelectorAll("button");
 		if (!buttons) return;
 
-		const currentIndex = Array.from(buttons).indexOf(document.activeElement);
+		const currentIndex = Array.from(buttons).indexOf(
+			document.activeElement as HTMLButtonElement,
+		);
 
 		switch (event.key) {
 			case "ArrowRight": {

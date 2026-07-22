@@ -1,15 +1,11 @@
 import { Search } from "@/components/search";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-
 interface HeaderProps {
 	fixed?: boolean;
 	className?: string;
 	children?: React.ReactNode;
 }
-
 export function Header({ fixed, className, children }: HeaderProps) {
 	return (
 		<header
@@ -21,8 +17,6 @@ export function Header({ fixed, className, children }: HeaderProps) {
 				className,
 			)}
 		>
-			<SidebarTrigger variant="outline" className="-ml-1" />
-			<Separator orientation="vertical" className="mr-2 h-4" />
 			<div className="ml-auto flex items-center gap-2">
 				<Search />
 				{/* Settings gear icon removed — theme only */}

@@ -489,11 +489,11 @@ export const verificationApi = {
 			method: "PATCH",
 		}),
 
-	listBlocked: (search?: string, page?: number) => {
+  listBlocked: <T = unknown>(search?: string, page?: number) => {
 		const params: Record<string, string> = {};
 		if (search) params.search = search;
 		if (page !== undefined) params.page = String(page);
-		return adminApiClient(`/admin/verifications/blocked`, {
+		return adminApiClient<T>(`/admin/verifications/blocked`, {
 			method: "GET",
 			params,
 		});
