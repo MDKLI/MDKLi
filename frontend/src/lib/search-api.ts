@@ -24,7 +24,7 @@ async function apiClient(endpoint: string, options: RequestInit = {}) {
 
 export const searchApi = {
 	// Search all
-	search: (query: string, filters?: Record<string, string>) => {
+  search: (query: string, filters?: Record<string, string | number>) => {
 		const params = new URLSearchParams();
 		params.append("q", query);
 		if (filters) {
@@ -37,8 +37,8 @@ export const searchApi = {
 		return apiClient(`/api/search?${params}`);
 	},
 
-	// Search doctors only
-	searchDoctors: (query: string, filters?: Record<string, string>) => {
+  // Search doctors only
+	searchDoctors: (query: string, filters?: Record<string, string | number>) => {
 		const params = new URLSearchParams();
 		params.append("q", query);
 		if (filters) {
@@ -52,7 +52,7 @@ export const searchApi = {
 	},
 
 	// Search facilities only
-	searchFacilities: (query: string, filters?: Record<string, string>) => {
+  searchFacilities: (query: string, filters?: Record<string, string | number>) => {
 		const params = new URLSearchParams();
 		params.append("q", query);
 		if (filters) {
