@@ -325,8 +325,8 @@ export const mediaApi = {
 // Invitation API
 export const invitationApi = {
 	// Find doctors by email/name/specialty
-	findDoctors: (query: string, facilityId: string) =>
-		apiClient<{ data: unknown[] }>(
+  findDoctors: <T = unknown>(query: string, facilityId: string) =>
+		apiClient<{ data: T[] }>(
 			`/api/invitations/doctors/search?query=${encodeURIComponent(query)}&facilityId=${facilityId}`,
 			{
 				method: "GET",
@@ -334,8 +334,8 @@ export const invitationApi = {
 		),
 
 	// Get facility branches for invitation
-	getFacilityBranches: (facilityId: string) =>
-		apiClient<{ data: unknown[] }>(
+  getFacilityBranches: <T = unknown>(facilityId: string) =>
+		apiClient<{ data: T[] }>(
 			`/api/invitations/facility/${facilityId}/branches`,
 			{
 				method: "GET",
@@ -355,8 +355,8 @@ export const invitationApi = {
 		}),
 
 	// Get facility invitations
-	getFacilityInvitations: (facilityId: string, status?: string) =>
-		apiClient<{ data: unknown[] }>(
+  getFacilityInvitations: <T = unknown>(facilityId: string, status?: string) =>
+		apiClient<{ data: T[] }>(
 			`/api/invitations/facility/${facilityId}${status ? `?status=${status}` : ""}`,
 			{
 				method: "GET",
@@ -364,8 +364,8 @@ export const invitationApi = {
 		),
 
 	// Get doctor invitations
-	getDoctorInvitations: (status?: string) =>
-		apiClient<{ data: unknown[] }>(
+  getDoctorInvitations: <T = unknown>(status?: string) =>
+		apiClient<{ data: T[] }>(
 			`/api/invitations/doctor${status ? `?status=${status}` : ""}`,
 			{
 				method: "GET",
@@ -391,8 +391,8 @@ export const invitationApi = {
 		}),
 
 	// Get doctor's facility branches (from accepted invitations)
-	getDoctorFacilityBranches: () =>
-		apiClient<{ data: unknown[] }>("/api/invitations/my-branches", {
+  getDoctorFacilityBranches: <T = unknown>() =>
+		apiClient<{ data: T[] }>("/api/invitations/my-branches", {
 			method: "GET",
 		}),
 
@@ -418,8 +418,8 @@ export const invitationApi = {
 		}),
 
 	// Get doctors assigned to a branch
-	getBranchDoctors: (branchId: string) =>
-		apiClient<{ data: unknown[] }>(
+  getBranchDoctors: <T = unknown>(branchId: string) =>
+		apiClient<{ data: T[] }>(
 			`/api/invitations/branch/${branchId}/doctors`,
 			{
 				method: "GET",

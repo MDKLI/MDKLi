@@ -159,7 +159,7 @@ export function SettingsBranches() {
 	// Fetch facility branches for doctors (from accepted invitations)
 	const fetchFacilityBranches = useCallback(async () => {
 		try {
-			const result = await invitationApi.getDoctorFacilityBranches();
+      const result = await invitationApi.getDoctorFacilityBranches<FacilityBranch>();
 			if (result?.data?.data) {
 				setFacilityBranches(result.data.data);
 			}

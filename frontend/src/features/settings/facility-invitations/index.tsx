@@ -86,8 +86,8 @@ export function FacilityInvitationsPage() {
 
 	const loadInvitations = useCallback(async (fid: string) => {
 		try {
-			const result: ListApiResult<Invitation> =
-				await invitationApi.getFacilityInvitations(fid);
+      const result: ListApiResult<Invitation> =
+        await invitationApi.getFacilityInvitations<Invitation>(fid);
 			if (result?.data?.data) {
 				setInvitations(result.data.data);
 			}

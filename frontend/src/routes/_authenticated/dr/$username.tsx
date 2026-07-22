@@ -88,22 +88,25 @@ function DoctorDetailPage() {
 		setViewerOpen(true);
 	};
 
-  const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
-		try {
-			const response = await bookingApi.getDoctorBranchesForBooking(doctorId);
-			if (
-				!response.data?.success ||
-				!response.data?.data?.branches ||
-				!Array.isArray(response.data.data.branches)
-			) {
-				setBranches([]);
-				return;
-			}
-			setBranches(response.data.data.branches);
-		} catch {
+interface DoctorBranchesResponse {
+	branches?: DoctorBranch[];
+}
+
+const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
+	try {
+		const response = await bookingApi.getDoctorBranchesForBooking(doctorId);
+		const responseData = response.data?.data as
+			| DoctorBranchesResponse
+			| undefined;
+		if (!response.data?.success || !Array.isArray(responseData?.branches)) {
 			setBranches([]);
+			return;
 		}
-	}, []);
+		setBranches(responseData.branches);
+	} catch {
+		setBranches([]);
+	}
+}, []);
 
 	const fetchDoctorDetails = useCallback(async () => {
 		try {
@@ -116,7 +119,7 @@ function DoctorDetailPage() {
 			);
 			if (found) {
 				setDoctor({ ...found, username });
-				await fetchBranchesFromBooking(found.user_id);
+				await fetchBranchesFromBooking(String(found.user_id));
 			} else {
 				toast.error("Doctor not found");
 			}
@@ -338,7 +341,12 @@ function DoctorDetailPage() {
 					</Card>
 
 					{/* Booking */}
-					<DoctorBooking doctorId={doctor.id} branches={branches} />
+					<DoctorBooking
+            doctorId={doctor.id}
+            branches={branches.filter(
+              (b): b is DoctorBranch & { id: string } => Boolean(b.id),
+            )}
+          />
 
 					{/* Practice Locations */}
 					<Card>
@@ -389,29 +397,25 @@ function DoctorDetailPage() {
 															</Badge>
 														)}
 
-														{branch.isFacilityBranch &&
-															(branch.ownerUserId || branch.owner_user_id) && (
-																<Link
-																	to="/fc/$username"
-																	params={{
-																		username:
-																			branch.ownerUserId ||
-																			branch.owner_user_id,
-																	}}
-																	className="inline-block mt-2"
-																>
-																	<Button size="sm" className="gap-1.5">
-																		<Building2 className="h-3.5 w-3.5" />
-																		View Facility
-																	</Button>
-																</Link>
-															)}
-
-														<p className="text-sm text-muted-foreground mt-1">
-															{[branch.area, branch.city]
-																.filter(Boolean)
-																.join(", ") || "Location not specified"}
-														</p>
+                            {(() => {
+															const facilityUsername =
+																branch.ownerUserId || branch.owner_user_id;
+															return (
+																branch.isFacilityBranch &&
+																facilityUsername && (
+																	<Link
+																		to="/fc/$username"
+																		params={{ username: facilityUsername }}
+																		className="inline-block mt-2"
+																	>
+																		<Button size="sm" className="gap-1.5">
+																			<Building2 className="h-3.5 w-3.5" />
+																			View Facility
+																		</Button>
+																	</Link>
+																)
+															);
+														})()}
 
 														{branch.address && (
 															<p className="text-sm text-muted-foreground mt-1">
@@ -419,17 +423,18 @@ function DoctorDetailPage() {
 															</p>
 														)}
 
-														{(branch.phone_numbers || branch.phoneNumbers)
-															?.length > 0 && (
-															<div className="flex items-center gap-2 mt-2 text-sm">
-																<Phone className="h-3 w-3" />
-																<span>
-																	{(
-																		branch.phone_numbers || branch.phoneNumbers
-																	).join(", ")}
-																</span>
-															</div>
-														)}
+                            {(() => {
+                              const phoneNumbers = branch.phone_numbers || branch.phoneNumbers;
+                              return (
+                                phoneNumbers &&
+                                phoneNumbers.length > 0 && (
+                                  <div className="flex items-center gap-2 mt-2 text-sm">
+                                    <Phone className="h-3 w-3" />
+                                    <span>{phoneNumbers.join(", ")}</span>
+                                  </div>
+                                )
+                              );
+                            })()}
 
 														{(branch.consultation_fee ||
 															branch.consultationFee) && (

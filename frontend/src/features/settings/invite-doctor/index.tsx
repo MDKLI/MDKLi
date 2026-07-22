@@ -101,8 +101,8 @@ export function InviteDoctorPage() {
 				}
 
 				// Load branches
-				const branchesResult: ListApiResult<Branch> =
-					await invitationApi.getFacilityBranches(fid);
+        const branchesResult: ListApiResult<Branch> =
+          await invitationApi.getFacilityBranches<Branch>(fid);
 				if (
 					branchesResult?.data &&
 					"data" in branchesResult.data &&
@@ -133,10 +133,10 @@ export function InviteDoctorPage() {
 
 		setIsSearching(true);
 		try {
-			const result: ListApiResult<Doctor> = await invitationApi.findDoctors(
-				searchQuery,
-				facilityId,
-			);
+      const result: ListApiResult<Doctor> = await invitationApi.findDoctors<Doctor>(
+          searchQuery,
+          facilityId,
+      );
 			if (result?.data && "data" in result.data && result.data.data) {
 				setFoundDoctors(result.data.data);
 				if (result.data.data.length === 0) {
