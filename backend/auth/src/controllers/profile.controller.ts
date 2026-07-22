@@ -64,12 +64,6 @@ export const getMyProfile = async (
 					updatedAt: user.updatedAt,
 				};
 				break;
-			case UserRole.ADMIN:
-			case UserRole.SUPER_ADMIN:
-				res
-					.status(403)
-					.json({ message: "Admins cannot update profile via this endpoint" });
-				return;
 			default:
 				res.status(400).json({ message: "Invalid user role" });
 				return;

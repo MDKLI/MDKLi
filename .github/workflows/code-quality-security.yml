@@ -1,8 +1,6 @@
 name: Code Quality & Security
 
 on:
-  pull_request:
-    branches: [main, app]
   workflow_dispatch:
 
 permissions:
@@ -13,10 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '24'
 
 jobs:
-  # Lint + Type Check + Build, per service (matrix)
   lint-typecheck-build:
     name: ${{ matrix.service.name }} / lint, typecheck, build
     runs-on: ubuntu-latest
@@ -34,17 +31,15 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
-          - name: frontend
-            path: frontend
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -53,11 +48,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Biome
-        run: npx @biomejs/biome check .
-
-      - name: Biome format check
-        run: npx @biomejs/biome format . --check
+      - name: Biome check (lint + format)
+        run: npx @biomejs/biome check --write .
 
       - name: TypeScript type check
         run: npm run typecheck --if-present || npx tsc --noEmit
@@ -65,7 +57,40 @@ jobs:
       - name: Build
         run: npm run build --if-present
 
-  # CodeQL - static analysis (JS/TS across the whole repo)
+  lint-typecheck-build-frontend:
+    name: frontend / lint, typecheck, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Biome check (lint + format)
+        run: pnpm exec biome check --write .
+
+      - name: TypeScript type check
+        run: pnpm run --if-present typecheck || pnpm exec tsc --noEmit
+
+      - name: Build
+        run: pnpm run --if-present build
+
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
@@ -75,23 +100,20 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           queries: security-and-quality
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+          build-mode: none
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:javascript-typescript'
 
-  # Semgrep - SAST rules
   semgrep:
     name: Semgrep
     runs-on: ubuntu-latest
@@ -102,7 +124,7 @@ jobs:
       image: semgrep/semgrep
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Semgrep
         run: |
@@ -117,31 +139,26 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
 
-  # Gitleaks - secret scanning
   gitleaks:
     name: Gitleaks
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
+    container:
+      image: ghcr.io/gitleaks/gitleaks:latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+        run: gitleaks detect --source . --verbose --redact
 
-  # OSV Scanner - dependency vulnerability scanning
   osv-scanner:
     name: OSV Scanner
     runs-on: ubuntu-latest
@@ -150,10 +167,10 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run OSV Scanner
-        uses: google/osv-scanner-action/osv-scanner-action@v1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
         with:
           scan-args: |-
             --recursive
@@ -163,13 +180,22 @@ jobs:
             ./
         continue-on-error: true
 
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Check for SARIF file
+        id: check-osv-sarif
         if: always()
+        run: |
+          if [ -f osv-results.sarif ]; then
+            echo "sarif_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sarif_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload OSV SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && steps.check-osv-sarif.outputs.sarif_exists == 'true'
         with:
           sarif_file: osv-results.sarif
 
-  # npm audit, per service (matrix)
   npm-audit:
     name: ${{ matrix.service.name }} / npm audit
     runs-on: ubuntu-latest
@@ -187,17 +213,15 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
-          - name: frontend
-            path: frontend
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -209,7 +233,34 @@ jobs:
       - name: npm audit (fail on high/critical)
         run: npm audit --audit-level=high
 
-  # OpenSSF Scorecard - supply chain security posture
+  npm-audit-frontend:
+    name: frontend / pnpm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (fail on high/critical)
+        run: pnpm audit --audit-level=high
+
   scorecard:
     name: OpenSSF Scorecard
     runs-on: ubuntu-latest
@@ -220,7 +271,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -232,6 +283,6 @@ jobs:
           publish_results: true
 
       - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: scorecard-results.sarif

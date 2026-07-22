@@ -39,6 +39,7 @@ import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedBookingIndexRouteImport } from './routes/_authenticated/booking/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
+import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsBranchesRouteImport } from './routes/_authenticated/settings/branches'
@@ -49,6 +50,8 @@ import { Route as AuthenticatedPhUsernameRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFcUsernameRouteImport } from './routes/_authenticated/fc/$username'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedDrUsernameRouteImport } from './routes/_authenticated/dr/$username'
+import { Route as AuthenticatedBookingPaymentResultRouteImport } from './routes/_authenticated/booking/payment-result'
+import { Route as AuthenticatedBookingPayRouteImport } from './routes/_authenticated/booking/pay'
 import { Route as AuthenticatedAdminVerificationRouteImport } from './routes/_authenticated/admin/verification'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin/dashboard'
@@ -215,6 +218,12 @@ const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsPaymentRoute =
+  AuthenticatedSettingsPaymentRouteImport.update({
+    id: '/payment',
+    path: '/payment',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -270,6 +279,17 @@ const AuthenticatedErrorsErrorRoute =
 const AuthenticatedDrUsernameRoute = AuthenticatedDrUsernameRouteImport.update({
   id: '/dr/$username',
   path: '/dr/$username',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBookingPaymentResultRoute =
+  AuthenticatedBookingPaymentResultRouteImport.update({
+    id: '/booking/payment-result',
+    path: '/booking/payment-result',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBookingPayRoute = AuthenticatedBookingPayRouteImport.update({
+  id: '/booking/pay',
+  path: '/booking/pay',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminVerificationRoute =
@@ -338,6 +358,8 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/verification': typeof AuthenticatedAdminVerificationRoute
+  '/booking/pay': typeof AuthenticatedBookingPayRoute
+  '/booking/payment-result': typeof AuthenticatedBookingPaymentResultRoute
   '/dr/$username': typeof AuthenticatedDrUsernameRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/fc/$username': typeof AuthenticatedFcUsernameRoute
@@ -348,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/settings/branches': typeof AuthenticatedSettingsBranchesRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/booking/': typeof AuthenticatedBookingIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -384,6 +407,8 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/verification': typeof AuthenticatedAdminVerificationRoute
+  '/booking/pay': typeof AuthenticatedBookingPayRoute
+  '/booking/payment-result': typeof AuthenticatedBookingPaymentResultRoute
   '/dr/$username': typeof AuthenticatedDrUsernameRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/fc/$username': typeof AuthenticatedFcUsernameRoute
@@ -394,6 +419,7 @@ export interface FileRoutesByTo {
   '/settings/branches': typeof AuthenticatedSettingsBranchesRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/booking': typeof AuthenticatedBookingIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -433,6 +459,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/verification': typeof AuthenticatedAdminVerificationRoute
+  '/_authenticated/booking/pay': typeof AuthenticatedBookingPayRoute
+  '/_authenticated/booking/payment-result': typeof AuthenticatedBookingPaymentResultRoute
   '/_authenticated/dr/$username': typeof AuthenticatedDrUsernameRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/fc/$username': typeof AuthenticatedFcUsernameRoute
@@ -443,6 +471,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/branches': typeof AuthenticatedSettingsBranchesRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/booking/': typeof AuthenticatedBookingIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -482,6 +511,8 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/users'
     | '/admin/verification'
+    | '/booking/pay'
+    | '/booking/payment-result'
     | '/dr/$username'
     | '/errors/$error'
     | '/fc/$username'
@@ -492,6 +523,7 @@ export interface FileRouteTypes {
     | '/settings/branches'
     | '/settings/display'
     | '/settings/notifications'
+    | '/settings/payment'
     | '/apps/'
     | '/booking/'
     | '/chats/'
@@ -528,6 +560,8 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/users'
     | '/admin/verification'
+    | '/booking/pay'
+    | '/booking/payment-result'
     | '/dr/$username'
     | '/errors/$error'
     | '/fc/$username'
@@ -538,6 +572,7 @@ export interface FileRouteTypes {
     | '/settings/branches'
     | '/settings/display'
     | '/settings/notifications'
+    | '/settings/payment'
     | '/apps'
     | '/booking'
     | '/chats'
@@ -576,6 +611,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/verification'
+    | '/_authenticated/booking/pay'
+    | '/_authenticated/booking/payment-result'
     | '/_authenticated/dr/$username'
     | '/_authenticated/errors/$error'
     | '/_authenticated/fc/$username'
@@ -586,6 +623,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/branches'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/payment'
     | '/_authenticated/apps/'
     | '/_authenticated/booking/'
     | '/_authenticated/chats/'
@@ -822,6 +860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/payment': {
+      id: '/_authenticated/settings/payment'
+      path: '/payment'
+      fullPath: '/settings/payment'
+      preLoaderRoute: typeof AuthenticatedSettingsPaymentRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -890,6 +935,20 @@ declare module '@tanstack/react-router' {
       path: '/dr/$username'
       fullPath: '/dr/$username'
       preLoaderRoute: typeof AuthenticatedDrUsernameRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/booking/payment-result': {
+      id: '/_authenticated/booking/payment-result'
+      path: '/booking/payment-result'
+      fullPath: '/booking/payment-result'
+      preLoaderRoute: typeof AuthenticatedBookingPaymentResultRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/booking/pay': {
+      id: '/_authenticated/booking/pay'
+      path: '/booking/pay'
+      fullPath: '/booking/pay'
+      preLoaderRoute: typeof AuthenticatedBookingPayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/verification': {
@@ -968,6 +1027,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsBranchesRoute: typeof AuthenticatedSettingsBranchesRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsPaymentRoute: typeof AuthenticatedSettingsPaymentRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -981,6 +1041,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
     AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsPaymentRoute: AuthenticatedSettingsPaymentRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   }
 
@@ -1001,6 +1062,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyInvitationsRoute: typeof AuthenticatedMyInvitationsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedWishlistRoute: typeof AuthenticatedWishlistRoute
+  AuthenticatedBookingPayRoute: typeof AuthenticatedBookingPayRoute
+  AuthenticatedBookingPaymentResultRoute: typeof AuthenticatedBookingPaymentResultRoute
   AuthenticatedDrUsernameRoute: typeof AuthenticatedDrUsernameRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedFcUsernameRoute: typeof AuthenticatedFcUsernameRoute
@@ -1025,6 +1088,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyInvitationsRoute: AuthenticatedMyInvitationsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedWishlistRoute: AuthenticatedWishlistRoute,
+  AuthenticatedBookingPayRoute: AuthenticatedBookingPayRoute,
+  AuthenticatedBookingPaymentResultRoute:
+    AuthenticatedBookingPaymentResultRoute,
   AuthenticatedDrUsernameRoute: AuthenticatedDrUsernameRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedFcUsernameRoute: AuthenticatedFcUsernameRoute,

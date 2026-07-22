@@ -1,15 +1,33 @@
-FROM node:22-alpine AS build
+# ---- Builder Stage ----
+FROM node:24-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
 
-FROM node:22-alpine
+RUN apk update && apk add --no-cache openssl=3.5.7-r0
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build \
+  && npm prune --production
+
+# ---- Production Stage ----
+FROM node:24-alpine
 WORKDIR /app
-COPY --from=build /app /app
+RUN apk update && apk add --no-cache openssl=3.5.7-r0 \
+  && addgroup -S appgroup && adduser -S appuser -G appgroup \
+  && npm install -g npm@latest
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+  && mkdir -p /app/logs \
+  && chown -R appuser:appgroup /app
+USER appuser
 ENV NODE_ENV=production
 EXPOSE 3000
-
-# Run migrations and seed, then start the server
-CMD ["sh", "-c", "npm run migrate && { npm run seed 2>/dev/null || true; } && exec npm start"]
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "dist/index.js"]

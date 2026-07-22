@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "pg": "^8.22.0"
-  }
+	"dependencies": {
+		"pg": "^8.22.0"
+	}
 }

@@ -25,7 +25,7 @@ export const getUserProfile = async (
 		return;
 	}
 
-	let profile;
+	let profile: any;
 	switch (user.role) {
 		case "patient":
 			profile = await AppDataSource.getRepository(PatientProfile).findOne({
