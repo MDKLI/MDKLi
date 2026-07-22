@@ -271,12 +271,18 @@ function PharmacyDetailPage() {
 															{branch.address}
 														</p>
 													)}
-													{branch.phone_numbers?.length > 0 && (
-														<div className="flex items-center gap-2 mt-2 text-sm">
-															<Phone className="h-3 w-3" />
-															<span>{branch.phone_numbers.join(", ")}</span>
-														</div>
-													)}
+                        {(() => {
+                          const phoneNumbers = branch.phone_numbers;
+                          return (
+                            phoneNumbers &&
+                            phoneNumbers.length > 0 && (
+                              <div className="flex items-center gap-2 mt-2 text-sm">
+                                <Phone className="h-3 w-3" />
+                                <span>{phoneNumbers.join(", ")}</span>
+                              </div>
+                            )
+                          );
+                        })()}
 												</div>
 											</div>
 										</div>

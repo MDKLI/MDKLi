@@ -341,10 +341,11 @@ const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
 					</Card>
 
 					{/* Booking */}
-					<DoctorBooking
+          <DoctorBooking
             doctorId={doctor.id}
             branches={branches.filter(
-              (b): b is DoctorBranch & { id: string } => Boolean(b.id),
+              (b): b is DoctorBranch & { id: string; name: string } =>
+                Boolean(b.id) && Boolean(b.name),
             )}
           />
 
