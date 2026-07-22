@@ -340,13 +340,23 @@ const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
 						</CardContent>
 					</Card>
 
-					{/* Booking */}
-          <DoctorBooking
+          {/* Booking */}
+					<DoctorBooking
             doctorId={doctor.id}
-            branches={branches.filter(
-              (b): b is DoctorBranch & { id: string; name: string } =>
-                Boolean(b.id) && Boolean(b.name),
-            )}
+            branches={branches
+              .filter(
+                (b): b is DoctorBranch & { id: string; name: string } =>
+                  Boolean(b.id) && Boolean(b.name),
+              )
+              .map((b) => ({
+                ...b,
+                consultation_fee: b.consultation_fee
+                  ? Number(b.consultation_fee)
+                  : undefined,
+                consultationFee: b.consultationFee
+                  ? Number(b.consultationFee)
+                  : undefined,
+              }))}
           />
 
 					{/* Practice Locations */}
