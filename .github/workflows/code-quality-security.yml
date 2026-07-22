@@ -138,6 +138,13 @@ jobs:
             --output=semgrep.sarif
         continue-on-error: true
 
+      - name: Upload Semgrep artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: error
+
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         if: always()
@@ -180,6 +187,18 @@ jobs:
             ./
         continue-on-error: true
 
+      - name: Upload OSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-sarif
+          path: osv-results.sarif
+          if-no-files-found: error
+            - name: Upload OSV SARIF to GitHub Security tab
+              uses: github/codeql-action/upload-sarif@v4
+              if: always() && steps.check-osv-sarif.outputs.sarif_exists == 'true'
+              with:
+                sarif_file: osv-results.sarif
+
       - name: Check for SARIF file
         id: check-osv-sarif
         if: always()
@@ -189,12 +208,6 @@ jobs:
           else
             echo "sarif_exists=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Upload OSV SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: always() && steps.check-osv-sarif.outputs.sarif_exists == 'true'
-        with:
-          sarif_file: osv-results.sarif
 
   npm-audit:
     name: ${{ matrix.service.name }} / npm audit
@@ -281,6 +294,13 @@ jobs:
           results_file: scorecard-results.sarif
           results_format: sarif
           publish_results: true
+
+      - name: Upload Scorecard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-sarif
+          path: scorecard-results.sarif
+          if-no-files-found: error
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
