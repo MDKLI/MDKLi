@@ -31,8 +31,6 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
-          - name: frontend
-            path: frontend
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}
@@ -58,6 +56,40 @@ jobs:
 
       - name: Build
         run: npm run build --if-present
+
+  lint-typecheck-build-frontend:
+    name: frontend / lint, typecheck, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Biome check (lint + format)
+        run: pnpm exec biome check --write .
+
+      - name: TypeScript type check
+        run: pnpm run typecheck --if-present || pnpm exec tsc --noEmit
+
+      - name: Build
+        run: pnpm run build --if-present
 
   codeql:
     name: CodeQL
@@ -181,8 +213,6 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
-          - name: frontend
-            path: frontend
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}
@@ -202,6 +232,34 @@ jobs:
 
       - name: npm audit (fail on high/critical)
         run: npm audit --audit-level=high
+
+  npm-audit-frontend:
+    name: frontend / pnpm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (fail on high/critical)
+        run: pnpm audit --audit-level=high
 
   scorecard:
     name: OpenSSF Scorecard
