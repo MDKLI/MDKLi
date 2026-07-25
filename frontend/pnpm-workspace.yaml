@@ -6,3 +6,4 @@ overrides:
   form-data: ">=4.0.6"
   diff: ">=8.0.3"
   "@babel/core": ">=7.29.1"
+  seroval: ">=1.5.3"
