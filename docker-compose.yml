@@ -26,6 +26,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_BUCKET_NAME=mdkli-media
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672
+      - FRONTEND_URL=http://localhost:80
     depends_on:
       - postgres
       - minio
@@ -173,8 +174,10 @@ services:
       - LOG_LEVEL=info
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -199,9 +202,12 @@ services:
       - MINIO_BUCKET_NAME=mdkli-media
       - LOG_LEVEL=info
     depends_on:
-      - postgres
-      - rabbitmq
-      - minio
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
     networks:
       - app-network
 
@@ -217,8 +223,10 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - AUTH_SERVICE_URL=http://auth-service:3000
     depends_on:
-      - postgres
-      - rabbitmq
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - app-network
 

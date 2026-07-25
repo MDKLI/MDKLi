@@ -5,6 +5,7 @@ import express from "express";
 import helmet from "helmet";
 import { verificationRouter } from "./modules/verification/verification.router";
 import { logger } from "./utils/logger";
+import { apiRateLimiter } from "./middleware/rate-limit.middleware";
 
 export const app = express();
 
@@ -12,6 +13,7 @@ app.use(helmet());
 app.use(cors());
 app.use(compression());
 app.use(express.json());
+app.use(apiRateLimiter);
 
 app.get("/health", (_req, res) => {
 	res.json({ status: "ok", service: "admin-service" });

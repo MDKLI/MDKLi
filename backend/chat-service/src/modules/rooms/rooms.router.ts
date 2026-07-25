@@ -4,6 +4,7 @@ import {
 	type AuthedRequest,
 	requireAuth,
 } from "../../middleware/auth.middleware";
+import { apiRateLimiter } from "../../middleware/rate-limit.middleware";
 import { getIO } from "../../sockets/chat.socket";
 import { logger } from "../../utils/logger";
 import {
@@ -18,6 +19,7 @@ import {
 
 export const roomsRouter = Router();
 roomsRouter.use(requireAuth);
+roomsRouter.use(apiRateLimiter);
 
 function handleRoomError(res: Response, error: unknown) {
 	if (error instanceof RoomAccessError) {

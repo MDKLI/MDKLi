@@ -387,8 +387,8 @@ async function createBranches(
 
 		// Extract lat/lng from Google Maps URL if present
 		if (branchData.googleMapsUrl) {
-			const latLngMatch = branchData.googleMapsUrl.match(
-				/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+      const latLngMatch = branchData.googleMapsUrl.match(
+				/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
 			);
 			if (latLngMatch) {
 				branch.latitude = parseFloat(latLngMatch[1]);

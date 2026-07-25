@@ -1,3 +1,4 @@
+import { onboardingDraft } from "@/lib/onboarding-draft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -214,14 +215,14 @@ function Onboarding() {
 					"[ONBOARDING] Doctor profile from localStorage:",
 					doctorProfile,
 				);
-				profileData = {
+        profileData = {
 					full_name: doctorProfile.fullName,
 					photo_url: doctorProfile.photoUrl,
-					phone_number: doctorProfile.phoneNumber,
+					phone_number: onboardingDraft.doctorPhoneNumber,
 					title: doctorProfile.title,
 					specialty: doctorProfile.specialty,
 					years_of_experience: doctorProfile.yearsOfExperience,
-					gender: doctorProfile.gender,
+					gender: onboardingDraft.doctorGender,
 					description: doctorProfile.bio,
 					has_private_practice: doctorProfile.hasPrivatePractice,
 				};
@@ -251,19 +252,19 @@ function Onboarding() {
 					profileData = {
 						pharmacy_name: facilityProfile.facilityName,
 						photo_url: facilityProfile.photoUrl,
-						phone_numbers: facilityProfile.phoneNumber
-							? [facilityProfile.phoneNumber]
-							: [],
+            phone_numbers: onboardingDraft.facilityPhoneNumber
+              ? [onboardingDraft.facilityPhoneNumber]
+              : [],
 						facility_type: facilityProfile.facilityType,
 						description: facilityProfile.bio,
 					};
 				} else {
 					// Clinic uses clinic_name
-					profileData = {
+          profileData = {
 						clinic_name: facilityProfile.facilityName,
 						photo_url: facilityProfile.photoUrl,
-						phone_numbers: facilityProfile.phoneNumber
-							? [facilityProfile.phoneNumber]
+						phone_numbers: onboardingDraft.facilityPhoneNumber
+							? [onboardingDraft.facilityPhoneNumber]
 							: [],
 						facility_type: facilityProfile.facilityType,
 						description: facilityProfile.bio,
@@ -828,12 +829,12 @@ function DoctorBasicStep({ onNext }: { onNext: () => void }) {
 		const existingData = JSON.parse(
 			localStorage.getItem("pendingDoctorProfile") || "{}",
 		);
+  onboardingDraft.doctorPhoneNumber = data.phoneNumber;
 		localStorage.setItem(
 			"pendingDoctorProfile",
 			JSON.stringify({
 				...existingData,
 				fullName: data.fullName,
-				phoneNumber: data.phoneNumber,
 				photoUrl: profileImage,
 			}),
 		);
@@ -952,12 +953,12 @@ function DoctorProfessionalStep({ onNext }: { onNext: () => void }) {
 			const existingData = JSON.parse(
 				localStorage.getItem("pendingDoctorProfile") || "{}",
 			);
+      onboardingDraft.doctorGender = data.gender;
 			const newData = {
 				...existingData,
 				title: data.title,
 				specialty: data.specialty,
 				yearsOfExperience: data.yearsOfExperience,
-				gender: data.gender,
 				bio: data.bio,
 			};
 			localStorage.setItem("pendingDoctorProfile", JSON.stringify(newData));
@@ -1207,12 +1208,12 @@ function FacilityBasicStep({ onNext }: { onNext: () => void }) {
 		const existingData = JSON.parse(
 			localStorage.getItem("pendingFacilityProfile") || "{}",
 		);
+  onboardingDraft.facilityPhoneNumber = data.phoneNumber;
 		localStorage.setItem(
 			"pendingFacilityProfile",
 			JSON.stringify({
 				...existingData,
 				facilityName: data.facilityName,
-				phoneNumber: data.phoneNumber,
 				photoUrl: logoImage,
 			}),
 		);
