@@ -313,11 +313,15 @@ jobs:
 
       - name: Filter out repo-level checks with no code location
         run: |
-          jq '.runs[].results |= map(select((.locations // []) | length > 0))' \
-            scorecard-results.sarif > scorecard-results-filtered.sarif
-          echo "Remaining results:"
-          jq '[.runs[].results[].ruleId] | group_by(.) | map({rule: .[0], count: length})' \
-            scorecard-results-filtered.sarif
+          jq '
+            .runs[].results |= map(
+              select(
+                [.locations[]?.physicalLocation.artifactLocation.uri]
+                - ["no file associated with this alert"]
+                | length > 0
+              )
+            )
+          ' scorecard-results.sarif > scorecard-results-filtered.sarif
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
