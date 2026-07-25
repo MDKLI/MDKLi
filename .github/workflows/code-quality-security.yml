@@ -283,9 +283,57 @@ jobs:
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
-          publish_results: true
+          publish_results: false
+
+      - name: Run Scorecard analysis (JSON for report)
+        uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: scorecard-results.json
+          results_format: json
+          publish_results: false
+
+      - name: Upload Scorecard JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-json
+          path: scorecard-results.json
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: scorecard-results.sarif
+
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [semgrep, gitleaks, osv-scanner, scorecard]
+    if: always()
+    permissions:
+      contents: read
+      security-events: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download Scorecard JSON
+        uses: actions/download-artifact@v4
+        with:
+          name: scorecard-json
+        continue-on-error: true
+
+      - name: Generate report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          chmod +x scripts/generate-security-report.sh
+          ./scripts/generate-security-report.sh
+
+      - name: Publish to job summary
+        run: cat security-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
