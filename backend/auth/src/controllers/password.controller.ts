@@ -31,8 +31,12 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 		user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 60 minutes from now
 		await userRepository.save(user);
 
-		// send email with reset link
-		const resetLink = `${req.protocol}://${req.get("host")}/reset-password/?token=${resetToken}&email=${email}`;
+    // send email with reset link
+		// Use a configured frontend origin instead of the request's Host header,
+		// which is attacker-controllable and can be used to redirect the reset
+		// link to a malicious domain (host header injection).
+    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:80";
+		const resetLink = `${FRONTEND_URL}/reset-password/?token=${resetToken}&email=${email}`;
 		await sendEmail(
 			email,
 			"Password Reset Request",

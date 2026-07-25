@@ -11,25 +11,37 @@ export class RabbitMQClient {
 	private channel: any = null;
 	private readonly EXCHANGE_NAME = "auth.events";
 
-	async connect(): Promise<void> {
-		try {
-			const rabbitmqUrl =
-				process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672";
-			this.connection = await amqp.connect(rabbitmqUrl);
-			this.channel = await this.connection.createChannel();
+  async connect(): Promise<void> {
+		const rabbitmqUrl =
+			process.env.RABBITMQ_URL || "amqp://admin:admin@localhost:5672";
+		const maxRetries = 10;
+		const retryDelayMs = 3000;
 
-			// Create exchange
-			await this.channel.assertExchange(this.EXCHANGE_NAME, "topic", {
-				durable: true,
-			});
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			try {
+				this.connection = await amqp.connect(rabbitmqUrl);
+				this.channel = await this.connection.createChannel();
 
-			// Create queues
-			await this.setupQueues();
+				// Create exchange
+				await this.channel.assertExchange(this.EXCHANGE_NAME, "topic", {
+					durable: true,
+				});
 
-			logger.info("RabbitMQ connected");
-		} catch (error) {
-			logger.error("Failed to connect to RabbitMQ:", error);
-			throw error;
+				// Create queues
+				await this.setupQueues();
+
+				logger.info("RabbitMQ connected");
+				return;
+			} catch (error) {
+				logger.error(
+					`Failed to connect to RabbitMQ (attempt ${attempt}/${maxRetries}):`,
+					error,
+				);
+				if (attempt === maxRetries) {
+					throw error;
+				}
+				await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+			}
 		}
 	}
 

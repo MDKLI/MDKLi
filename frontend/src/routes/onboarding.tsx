@@ -1,3 +1,4 @@
+import { onboardingDraft } from "@/lib/onboarding-draft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -251,9 +252,9 @@ function Onboarding() {
 					profileData = {
 						pharmacy_name: facilityProfile.facilityName,
 						photo_url: facilityProfile.photoUrl,
-						phone_numbers: facilityProfile.phoneNumber
-							? [facilityProfile.phoneNumber]
-							: [],
+            phone_numbers: onboardingDraft.facilityPhoneNumber
+              ? [onboardingDraft.facilityPhoneNumber]
+              : [],
 						facility_type: facilityProfile.facilityType,
 						description: facilityProfile.bio,
 					};
@@ -262,9 +263,9 @@ function Onboarding() {
 					profileData = {
 						clinic_name: facilityProfile.facilityName,
 						photo_url: facilityProfile.photoUrl,
-						phone_numbers: facilityProfile.phoneNumber
-							? [facilityProfile.phoneNumber]
-							: [],
+            phone_numbers: onboardingdraft.facilityphonenumber
+              ? [onboardingDraft.facilityPhoneNumber]
+              : [],
 						facility_type: facilityProfile.facilityType,
 						description: facilityProfile.bio,
 					};
@@ -1207,12 +1208,12 @@ function FacilityBasicStep({ onNext }: { onNext: () => void }) {
 		const existingData = JSON.parse(
 			localStorage.getItem("pendingFacilityProfile") || "{}",
 		);
+  onboardingDraft.facilityPhoneNumber = data.phoneNumber;
 		localStorage.setItem(
 			"pendingFacilityProfile",
 			JSON.stringify({
 				...existingData,
 				facilityName: data.facilityName,
-				phoneNumber: data.phoneNumber,
 				photoUrl: logoImage,
 			}),
 		);
