@@ -186,9 +186,24 @@ export const updateMyProfile = async (
 					updateData.emergency_contact = req.body.emergencyContact;
 				}
 
-				Object.assign(profile, updateData);
+        Object.assign(profile, updateData);
 				await repo.save(profile);
-				res.json({ message: "Profile updated", profile });
+				res.json({
+					message: "Profile updated",
+					profile: {
+						id: profile.id,
+						full_name: profile.full_name,
+						photo_url: profile.photo_url,
+						gender: profile.gender,
+						date_of_birth: profile.date_of_birth,
+						blood_type: profile.blood_type,
+						is_smoker: profile.is_smoker,
+						allergies: profile.allergies,
+						current_medications: profile.current_medications,
+						family_history: profile.family_history,
+						emergency_contact: profile.emergency_contact,
+					},
+				});
 				return;
 			}
 			case UserRole.CLINIC_ADMIN: {
@@ -220,7 +235,7 @@ export const updateMyProfile = async (
 					updateData.facility_type = req.body.facilityType;
 				}
 
-				Object.assign(profile, updateData);
+        Object.assign(profile, updateData);
 				await repo.save(profile);
 				publishFacilityUpdated(profile.id, "clinic").catch((err) => {
 					logger.error("Failed to publish facility.updated event:", err);
@@ -231,7 +246,20 @@ export const updateMyProfile = async (
 					await saveBranches(user.id, req.body.branches, res);
 				}
 
-				res.json({ message: "Profile updated", profile });
+				res.json({
+					message: "Profile updated",
+					profile: {
+						id: profile.id,
+						clinic_name: profile.clinic_name,
+						photo_url: profile.photo_url,
+						city: profile.city,
+						address: profile.address,
+						phone_numbers: profile.phone_numbers,
+						description: profile.description,
+						facility_type: profile.facility_type,
+						status: profile.status,
+					},
+				});
 				return;
 			}
 			case UserRole.DOCTOR: {
@@ -262,7 +290,7 @@ export const updateMyProfile = async (
 						req.body.bio || req.body.description || profile.description,
 				};
 
-				Object.assign(profile, updateData);
+        Object.assign(profile, updateData);
 
 				// Handle branches if provided
 				if (req.body.branches) {
@@ -279,11 +307,24 @@ export const updateMyProfile = async (
 
 				await repo.save(profile);
 				publishDoctorUpdated(profile.id).catch((err) => {
-					// ← ADD HERE
 					logger.error("Failed to publish doctor.updated event:", err);
 				});
 
-				res.json({ message: "Profile updated", profile });
+				res.json({
+					message: "Profile updated",
+					profile: {
+						id: profile.id,
+						full_name: profile.full_name,
+						photo_url: profile.photo_url,
+						phone_number: profile.phone_number,
+						specialty: profile.specialty,
+						title: profile.title,
+						gender: profile.gender,
+						years_of_experience: profile.years_of_experience,
+						has_private_practice: profile.has_private_practice,
+						description: profile.description,
+					},
+				});
 				return;
 			}
 			case UserRole.PHARMACY_ADMIN: {
@@ -316,7 +357,7 @@ export const updateMyProfile = async (
 					updateData.facility_type = req.body.facilityType;
 				}
 
-				Object.assign(profile, updateData);
+        Object.assign(profile, updateData);
 				await repo.save(profile);
 				publishFacilityUpdated(profile.id, "pharmacy").catch((err) => {
 					logger.error("Failed to publish facility.updated event:", err);
@@ -327,7 +368,20 @@ export const updateMyProfile = async (
 					await saveBranches(user.id, req.body.branches, res);
 				}
 
-				res.json({ message: "Profile updated", profile });
+				res.json({
+					message: "Profile updated",
+					profile: {
+						id: profile.id,
+						pharmacy_name: profile.pharmacy_name,
+						photo_url: profile.photo_url,
+						city: profile.city,
+						address: profile.address,
+						phone_numbers: profile.phone_numbers,
+						description: profile.description,
+						facility_type: profile.facility_type,
+						status: profile.status,
+					},
+				});
 				return;
 			}
 			default:

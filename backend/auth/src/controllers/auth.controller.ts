@@ -14,6 +14,21 @@ import logger from "../utility/logger";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-jwt-secret";
 
+// Only these fields may be copied from client-supplied profileData onto a
+// newly created profile entity — never status/is_active/clinic/id/user.
+function pickAllowed<T extends object>(
+	source: Record<string, unknown>,
+	allowedKeys: (keyof T)[],
+): Partial<T> {
+	const result: Partial<T> = {};
+	for (const key of allowedKeys) {
+		if (Object.prototype.hasOwnProperty.call(source, key)) {
+			result[key] = source[key as string] as T[typeof key];
+		}
+	}
+	return result;
+}
+
 const verifyOTP = async (otp: string, secret: string): Promise<boolean> => {
 	try {
 		return speakeasy.totp.verify({
@@ -75,24 +90,48 @@ export const registerUser = async (
 		await queryRunner.manager.save(user);
 
 		switch (role) {
-			case "patient": {
+      case "patient": {
 				const patientProfile = new PatientProfile();
-				Object.assign(patientProfile, profileData);
+				Object.assign(
+					patientProfile,
+					pickAllowed(profileData ?? {}, [
+						"full_name", "photo_url", "date_of_birth", "gender", "blood_type",
+						"has_diabetes", "has_hypertension", "has_heart_disease", "has_asthma",
+						"has_kidney_disease", "is_pregnant", "is_smoker",
+						"has_previous_surgeries", "allergies", "current_medications",
+						"family_history", "other_conditions", "emergency_contact",
+						"latitude", "longitude",
+					]),
+				);
 				patientProfile.user = user;
 				await queryRunner.manager.save(patientProfile);
 				break;
 			}
-			case "clinic_admin": {
+      case "clinic_admin": {
 				const clinicProfile = new ClinicProfile();
-				Object.assign(clinicProfile, profileData);
+				Object.assign(
+					clinicProfile,
+					pickAllowed(profileData ?? {}, [
+						"clinic_name", "photo_url", "city", "address", "google_maps_url",
+						"latitude", "longitude", "phone_numbers", "facility_type",
+						"description",
+					]),
+				);
 				clinicProfile.user = user;
 				clinicProfile.status = "pending";
 				await queryRunner.manager.save(clinicProfile);
 				break;
 			}
-			case "doctor": {
+      case "doctor": {
 				const doctorProfile = new Doctor();
-				Object.assign(doctorProfile, profileData);
+				Object.assign(
+					doctorProfile,
+					pickAllowed(profileData ?? {}, [
+						"full_name", "photo_url", "specialty", "description",
+						"phone_number", "title", "gender", "years_of_experience",
+						"has_private_practice",
+					]),
+				);
 				doctorProfile.user = user;
 				// Clinic is optional - doctor can join later or create private practice
 				if (profileData.clinicId) {
@@ -107,9 +146,16 @@ export const registerUser = async (
 				await queryRunner.manager.save(doctorProfile);
 				break;
 			}
-			case "pharmacy_admin": {
+      case "pharmacy_admin": {
 				const pharmacyProfile = new PharmacyProfile();
-				Object.assign(pharmacyProfile, profileData);
+				Object.assign(
+					pharmacyProfile,
+					pickAllowed(profileData ?? {}, [
+						"pharmacy_name", "photo_url", "city", "address", "google_maps_url",
+						"latitude", "longitude", "phone_numbers", "description",
+						"facility_type",
+					]),
+				);
 				pharmacyProfile.user = user;
 				pharmacyProfile.status = "pending";
 				await queryRunner.manager.save(pharmacyProfile);
