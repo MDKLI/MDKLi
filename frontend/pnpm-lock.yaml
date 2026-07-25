@@ -9,6 +9,7 @@ overrides:
   form-data: '>=4.0.6'
   diff: '>=8.0.3'
   '@babel/core': '>=7.29.1'
+  seroval: '>=1.5.3'
 
 importers:
 
@@ -2748,10 +2749,10 @@ packages:
     resolution: {integrity: sha512-4FbuZ/TMl02sqv0RTFexu0SP6V+ywaIe5bAWCCEik0fk17BhALgwvUDVF7e3Uvf9pxmwCEJsRPmlkUE6HdzLAw==}
     engines: {node: '>=10'}
     peerDependencies:
-      seroval: ^1.0
+      seroval: '>=1.5.3'
 
-  seroval@1.5.1:
-    resolution: {integrity: sha512-OwrZRZAfhHww0WEnKHDY8OM0U/Qs8OTfIDWhUD4BLpNJUfXK4cGmjiagGze086m+mhI+V2nD0gfbHEnJjb9STA==}
+  seroval@1.5.6:
+    resolution: {integrity: sha512-rVQVWjjSvlINzaQPZH5JFqsqEsIWdTxY3iJZCnTL/5gQbXIRooVZKI60tVCkOVfzcRPejboxO2t0P89dg5mQaA==}
     engines: {node: '>=10'}
 
   siginfo@2.0.0:
@@ -4382,8 +4383,8 @@ snapshots:
     dependencies:
       '@tanstack/history': 1.161.6
       cookie-es: 3.1.1
-      seroval: 1.5.1
-      seroval-plugins: 1.5.1(seroval@1.5.1)
+      seroval: 1.5.6
+      seroval-plugins: 1.5.1(seroval@1.5.6)
 
   '@tanstack/router-devtools-core@1.167.3(@tanstack/router-core@1.168.15)(csstype@3.2.3)':
     dependencies:
@@ -5366,11 +5367,11 @@ snapshots:
 
   semver@7.7.4: {}
 
-  seroval-plugins@1.5.1(seroval@1.5.1):
+  seroval-plugins@1.5.1(seroval@1.5.6):
     dependencies:
-      seroval: 1.5.1
+      seroval: 1.5.6
 
-  seroval@1.5.1: {}
+  seroval@1.5.6: {}
 
   siginfo@2.0.0: {}
 
