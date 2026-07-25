@@ -311,10 +311,20 @@ jobs:
           name: scorecard-json
           path: scorecard-results.json
 
+      - name: Filter out repo-level checks with no code location
+        run: |
+          jq '.runs[].results |= map(
+            select(
+              .ruleId as $r |
+              ["Vulnerabilities", "Maintained", "Code-Review", "Dependency-Update-Tool", "Branch-Protection"]
+              | index($r) | not
+            )
+          )' scorecard-results.sarif > scorecard-results-filtered.sarif
+
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
         with:
-          sarif_file: scorecard-results.sarif
+          sarif_file: scorecard-results-filtered.sarif
 
   security-report:
     name: Security Report
@@ -330,7 +340,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download Scorecard JSON
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: scorecard-json
         continue-on-error: true

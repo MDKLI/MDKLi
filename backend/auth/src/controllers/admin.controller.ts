@@ -56,12 +56,46 @@ export const getUserProfile = async (
 	res.json({ user, profile });
 };
 
+const PROFILE_ALLOWED_FIELDS: Record<string, string[]> = {
+	patient: [
+		"full_name", "photo_url", "date_of_birth", "gender", "blood_type",
+		"has_diabetes", "has_hypertension", "has_heart_disease", "has_asthma",
+		"has_kidney_disease", "is_pregnant", "is_smoker", "has_previous_surgeries",
+		"allergies", "current_medications", "family_history", "other_conditions",
+		"emergency_contact", "latitude", "longitude",
+	],
+	clinic_admin: [
+		"clinic_name", "photo_url", "city", "address", "google_maps_url",
+		"latitude", "longitude", "phone_numbers", "facility_type", "description",
+	],
+	doctor: [
+		"full_name", "photo_url", "specialty", "description", "phone_number",
+		"title", "gender", "years_of_experience", "has_private_practice",
+	],
+	pharmacy_admin: [
+		"pharmacy_name", "photo_url", "city", "address", "google_maps_url",
+		"latitude", "longitude", "phone_numbers", "description", "facility_type",
+	],
+};
+
+function pickAllowedFields(
+	source: Record<string, unknown>,
+	allowedKeys: string[],
+): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	for (const key of allowedKeys) {
+		if (Object.prototype.hasOwnProperty.call(source, key)) {
+			result[key] = source[key];
+		}
+	}
+	return result;
+}
+
 export const updateUserProfile = async (
 	req: Request,
 	res: Response,
 ): Promise<void> => {
 	const { userId } = req.params;
-	const updateData = req.body;
 	const userRepository = AppDataSource.getRepository(User);
 	const user = await userRepository.findOne({ where: { id: userId } });
 
@@ -100,7 +134,8 @@ export const updateUserProfile = async (
 		return;
 	}
 
-	Object.assign(profile, updateData);
+  const allowedFields = PROFILE_ALLOWED_FIELDS[user.role] ?? [];
+	Object.assign(profile, pickAllowedFields(req.body ?? {}, allowedFields));
 	await (repo as any).save(profile);
 	res.json({ message: "Profile updated", profile });
 };
