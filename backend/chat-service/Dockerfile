@@ -1,5 +1,5 @@
 # ---- Builder Stage ----
-FROM node:24-alpine AS builder
+FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS builder
 WORKDIR /app
 
 RUN apk update && apk add --no-cache openssl=3.5.7-r0
@@ -14,7 +14,7 @@ RUN npx prisma generate \
   && npm prune --production
 
 # ---- Production Stage ----
-FROM node:24-alpine
+FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
 WORKDIR /app
 
 RUN apk update && apk add --no-cache openssl=3.5.7-r0 \
