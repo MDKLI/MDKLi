@@ -133,6 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      security-events: write
     container:
       image: ghcr.io/gitleaks/gitleaks:latest
     steps:
@@ -170,7 +171,6 @@ jobs:
         with:
           scan-args: |-
             --recursive
-            --skip-git
             --format=sarif
             --output=osv-results.sarif
             ./
