@@ -15,6 +15,7 @@ import { paymentRoutes } from "./modules/payment/payment.router";
 import { publicRoutes } from "./modules/public/public.router";
 import { walletRoutes } from "./modules/wallet/wallet.router";
 import { logger } from "./utils/logger";
+import { apiRateLimiter } from "./middleware/rate-limit.middleware";
 
 // Load environment variables
 dotenv.config();
@@ -38,6 +39,7 @@ app.use(compression());
 // Body parsing
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(apiRateLimiter);
 
 // Request logging
 app.use((req, res, next) => {

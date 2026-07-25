@@ -33,6 +33,9 @@ app.use(requestLogger);
 
 app.use(matricsMiddleware);
 
+import { apiRateLimiter } from "./middleware/rate-limit.middleware";
+app.use(apiRateLimiter);
+
 app.get("/health", (_req, res) => {
 	logger.info("/health accessed");
 	res.send("Auth Microservice is running");

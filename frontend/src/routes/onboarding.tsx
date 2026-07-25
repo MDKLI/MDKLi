@@ -215,14 +215,14 @@ function Onboarding() {
 					"[ONBOARDING] Doctor profile from localStorage:",
 					doctorProfile,
 				);
-				profileData = {
+        profileData = {
 					full_name: doctorProfile.fullName,
 					photo_url: doctorProfile.photoUrl,
-					phone_number: doctorProfile.phoneNumber,
+					phone_number: onboardingDraft.doctorPhoneNumber,
 					title: doctorProfile.title,
 					specialty: doctorProfile.specialty,
 					years_of_experience: doctorProfile.yearsOfExperience,
-					gender: doctorProfile.gender,
+					gender: onboardingDraft.doctorGender,
 					description: doctorProfile.bio,
 					has_private_practice: doctorProfile.hasPrivatePractice,
 				};
@@ -260,12 +260,12 @@ function Onboarding() {
 					};
 				} else {
 					// Clinic uses clinic_name
-					profileData = {
+          profileData = {
 						clinic_name: facilityProfile.facilityName,
 						photo_url: facilityProfile.photoUrl,
-            phone_numbers: onboardingdraft.facilityphonenumber
-              ? [onboardingDraft.facilityPhoneNumber]
-              : [],
+						phone_numbers: onboardingDraft.facilityPhoneNumber
+							? [onboardingDraft.facilityPhoneNumber]
+							: [],
 						facility_type: facilityProfile.facilityType,
 						description: facilityProfile.bio,
 					};
@@ -829,12 +829,12 @@ function DoctorBasicStep({ onNext }: { onNext: () => void }) {
 		const existingData = JSON.parse(
 			localStorage.getItem("pendingDoctorProfile") || "{}",
 		);
+  onboardingDraft.doctorPhoneNumber = data.phoneNumber;
 		localStorage.setItem(
 			"pendingDoctorProfile",
 			JSON.stringify({
 				...existingData,
 				fullName: data.fullName,
-				phoneNumber: data.phoneNumber,
 				photoUrl: profileImage,
 			}),
 		);
@@ -953,12 +953,12 @@ function DoctorProfessionalStep({ onNext }: { onNext: () => void }) {
 			const existingData = JSON.parse(
 				localStorage.getItem("pendingDoctorProfile") || "{}",
 			);
+      onboardingDraft.doctorGender = data.gender;
 			const newData = {
 				...existingData,
 				title: data.title,
 				specialty: data.specialty,
 				yearsOfExperience: data.yearsOfExperience,
-				gender: data.gender,
 				bio: data.bio,
 			};
 			localStorage.setItem("pendingDoctorProfile", JSON.stringify(newData));

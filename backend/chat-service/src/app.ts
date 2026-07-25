@@ -15,6 +15,7 @@ import {
 import { MediaService } from "./services/media.service";
 import { initSocketServer } from "./sockets/chat.socket";
 import { logger } from "./utils/logger";
+import { apiRateLimiter } from "./middleware/rate-limit.middleware";
 
 const app = express();
 const server = http.createServer(app);
@@ -23,6 +24,7 @@ app.use(helmet());
 app.use(cors());
 app.use(compression());
 app.use(express.json());
+app.use(apiRateLimiter);
 
 app.get("/health", (_req, res) => {
 	res.json({ status: "ok", service: "chat-service" });
