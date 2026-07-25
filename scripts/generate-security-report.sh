@@ -63,11 +63,39 @@ SECRET_TOTAL=$(jq 'length' secret-alerts.json)
 
 if [ -f scorecard-results.json ]; then
   SCORE=$(jq -r '.score // "N/A"' scorecard-results.json)
+
+  # Risk weights as published by Scorecard: Critical=10, High=7.5, Medium=5, Low=2.5
+  # https://github.com/ossf/scorecard/blob/main/docs/checks.md
+  WEIGHTS='{
+    "Binary-Artifacts": 7.5, "Branch-Protection": 7.5, "CI-Tests": 2.5,
+    "CII-Best-Practices": 2.5, "Code-Review": 7.5, "Contributors": 2.5,
+    "Dangerous-Workflow": 10, "Dependency-Update-Tool": 7.5, "Fuzzing": 5,
+    "License": 2.5, "Maintained": 7.5, "Packaging": 5, "Pinned-Dependencies": 5,
+    "SAST": 5, "Security-Policy": 5, "Signed-Releases": 7.5,
+    "Token-Permissions": 7.5, "Vulnerabilities": 7.5
+  }'
+  EXCLUDE_CHECKS='["Vulnerabilities", "Maintained", "Code-Review", "Dependency-Update-Tool", "Branch-Protection"]'
+
+  ADJUSTED_SCORE=$(jq -r \
+    --argjson weights "$WEIGHTS" \
+    --argjson exclude "$EXCLUDE_CHECKS" \
+    '
+      (.checks // []) as $checks
+      | ($checks | map(select(.score >= 0 and (([.name] - $exclude) | length) > 0))) as $included
+      | ($included | map(.score * ($weights[.name] // 0)) | add // 0) as $wsum
+      | ($included | map($weights[.name] // 0) | add // 0) as $tsum
+      | if $tsum > 0 then (($wsum / $tsum * 10 | round) / 10) else "N/A" end
+    ' scorecard-results.json)
+
   {
     echo ""
     echo "## OpenSSF Scorecard"
     echo ""
-    echo "Overall score: **$SCORE / 10**"
+    echo "Overall score (official, all 18 checks): **$SCORE / 10**"
+    echo ""
+    echo "Adjusted score (excluding Vulnerabilities, Maintained, Code-Review, Dependency-Update-Tool, Branch-Protection): **$ADJUSTED_SCORE / 10**"
+    echo ""
+    echo "_The adjusted score is a local recomputation for this report only. It has no effect on scorecard.dev or the OSSF public API, which always score every check by design — excluding checks there would defeat the point of a comparable public score._"
   } >>"$OUT"
 fi
 
