@@ -13,10 +13,50 @@ export class AddDoctorInvitationSystem1743055250000
 	name = "AddDoctorInvitationSystem1743055250000";
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
-		// Create invitation_status_enum
+    // Create invitation_status_enum
 		await queryRunner.query(`
       CREATE TYPE invitation_status_enum AS ENUM ('pending', 'accepted', 'rejected', 'cancelled');
     `);
+
+		// Create branches table (referenced by doctor_branch_invitation_branches and doctor_branches)
+		await queryRunner.createTable(
+			new Table({
+				name: "branches",
+				columns: [
+					{
+						name: "id",
+						type: "uuid",
+						isPrimary: true,
+						generationStrategy: "uuid",
+						default: "uuid_generate_v4()",
+					},
+					{ name: "user_id", type: "uuid", isNullable: false },
+					{ name: "name", type: "character varying", isNullable: false },
+					{ name: "city", type: "character varying", isNullable: false },
+					{ name: "area", type: "character varying", isNullable: false },
+					{ name: "address", type: "text", isNullable: false },
+					{ name: "google_maps_url", type: "character varying", isNullable: true },
+					{ name: "latitude", type: "float8", isNullable: true },
+					{ name: "longitude", type: "float8", isNullable: true },
+					{ name: "phone_numbers", type: "text", isArray: true },
+					{ name: "consultation_fee", type: "character varying", isNullable: true },
+					{ name: "media_urls", type: "jsonb", isNullable: true },
+					{ name: "created_at", type: "timestamp", default: "now()" },
+					{ name: "updated_at", type: "timestamp", default: "now()" },
+				],
+			}),
+			true,
+		);
+
+		await queryRunner.createForeignKey(
+			"branches",
+			new TableForeignKey({
+				columnNames: ["user_id"],
+				referencedColumnNames: ["id"],
+				referencedTableName: "users",
+				onDelete: "CASCADE",
+			}),
+		);
 
 		// Create doctor_branch_invitations table
 		await queryRunner.createTable(
@@ -292,11 +332,12 @@ export class AddDoctorInvitationSystem1743055250000
 		);
 	}
 
-	public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(queryRunner: QueryRunner): Promise<void> {
 		// Drop tables in reverse order
 		await queryRunner.dropTable("doctor_branches");
 		await queryRunner.dropTable("doctor_branch_invitation_branches");
 		await queryRunner.dropTable("doctor_branch_invitations");
+		await queryRunner.dropTable("branches");
 		await queryRunner.query(`DROP TYPE invitation_status_enum;`);
 	}
 }
