@@ -7,7 +7,7 @@ version: '3.8'
 
 services:
   auth-service:
-    image: ghcr.io/mdkli/mdkli-auth-service:e64c078
+    image: ghcr.io/mdkli/mdkli-auth-service:67af95a
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -43,7 +43,7 @@ services:
       - app-network
 
   search-service:
-    image: ghcr.io/mdkli/mdkli-search-service:e64c078
+    image: ghcr.io/mdkli/mdkli-search-service:67af95a
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -72,7 +72,7 @@ services:
       - app-network
 
   booking-service:
-    image: ghcr.io/mdkli/mdkli-booking-service:e64c078
+    image: ghcr.io/mdkli/mdkli-booking-service:67af95a
     restart: unless-stopped
     ports:
       - "3004:3004"
@@ -93,7 +93,7 @@ services:
       - app-network
 
   chat-service:
-    image: ghcr.io/mdkli/mdkli-chat-service:e64c078
+    image: ghcr.io/mdkli/mdkli-chat-service:67af95a
     restart: unless-stopped
     ports:
       - "3005:3005"
@@ -123,7 +123,7 @@ services:
       - app-network
 
   admin-service:
-    image: ghcr.io/mdkli/mdkli-admin-service:e64c078
+    image: ghcr.io/mdkli/mdkli-admin-service:67af95a
     restart: unless-stopped
     ports:
       - "3006:3006"
@@ -143,7 +143,7 @@ services:
       - app-network
 
   frontend:
-    image: ghcr.io/mdkli/mdkli-frontend:e64c078
+    image: ghcr.io/mdkli/mdkli-frontend:67af95a
     restart: unless-stopped
     ports:
       - "80:4173"
@@ -204,10 +204,9 @@ services:
       minio:
         condition: service_healthy
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000
-      minioadmin minioadmin; /usr/bin/mc mb
-      myminio/mdkli-media || true; /usr/bin/mc policy set public
-      myminio/mdkli-media; exit 0; "
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin
+      minioadmin; /usr/bin/mc mb myminio/mdkli-media || true; /usr/bin/mc policy
+      set public myminio/mdkli-media; exit 0; "
     networks:
       - app-network
 
@@ -247,9 +246,6 @@ services:
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
@@ -259,9 +255,10 @@ services:
       - app-network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
 
 networks:
   app-network:
