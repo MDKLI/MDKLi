@@ -12,75 +12,19 @@ Part of the MDKLi graduation project.
 
 ## Setup
 
-Save this as `docker/docker-compose.yml`:
+Only the `ML_tests/CBC` folder is needed to run the API — you don't need
+the rest of the `MDKLi` repo. The project also lives on the `ML_tests`
+branch, not `main`. Use a sparse checkout to pull just this folder:
 
-*(this only builds correctly from inside the project — it needs the
-`Dockerfile`, `Dockerfile.mlflow`, `requirements/`, and `app/` source next
-to it via `context: ..`; it's not a standalone file like a prebuilt-image
-compose setup)*
+```bash
+git clone --no-checkout --filter=blob:none https://github.com/MDKLI/MDKLi.git
+cd MDKLi
 
-```yaml
-services:
-  mlflow:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.mlflow
-    ports:
-      - "5005:5000"
-    volumes:
-      - mlflow_data:/mlflow_data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+git sparse-checkout init --cone
+git sparse-checkout set ML_tests/CBC
+git checkout ML_tests
 
-  api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    command: ["api"]
-    ports:
-      - "8000:8000"
-    env_file:
-      - ../.env
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-    volumes:
-      - artifacts_data:/app/artifacts
-    depends_on:
-      mlflow:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-
-  trainer:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    command: ["train", "--model-mode", "hierarchical"]
-    env_file:
-      - ../.env
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-    volumes:
-      - artifacts_data:/app/artifacts
-    depends_on:
-      mlflow:
-        condition: service_healthy
-    profiles:
-      - tools
-
-volumes:
-  artifacts_data:
-  mlflow_data:
+cd ML_tests/CBC
 ```
 
 `.env` is not tracked in git (it's in `.gitignore`, and there's no
@@ -103,6 +47,7 @@ and add those too if needed.
 The trained model artifacts (`artifacts/cbc_hierarchical_model.pkl`,
 `scaler.joblib`, `label_encoders.joblib`, etc.) are already included in the
 repo, so no training or model-building step is needed to run the API.
+
 
 ## Run with Docker
 
