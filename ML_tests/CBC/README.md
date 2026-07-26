@@ -58,7 +58,7 @@ docker compose -f docker/docker-compose.yml up --build
 This starts two services:
 
 - **`api`** — the FastAPI app, on `http://localhost:8000`
-- **`mlflow`** — the MLflow tracking server, on `http://localhost:5002`
+- **`mlflow`** — the MLflow tracking server, on `http://localhost:5005`
 
 (there's also a `trainer` service in the compose file, but it's behind the
 `tools` profile and won't start with a plain `up` — see
