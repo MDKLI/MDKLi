@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+	CalendarClock,
 	ChevronsUpDown,
 	Heart,
 	LogOut,
@@ -9,6 +10,7 @@ import {
 	User,
 	UserPlus,
 	Users,
+	Wallet,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { SignOutDialog } from "@/components/sign-out-dialog";
@@ -39,8 +41,9 @@ export function NavUser({ user }: NavUserProps) {
 	const [open, setOpen] = useDialogState();
 	const { auth } = useAuthStore();
 
-	const userRole = auth.user?.role || "";
+  const userRole = auth.user?.role || "";
 	const isPatient = userRole === "patient";
+	const isDoctor = userRole === "doctor";
 	const isClinicAdmin = userRole === "clinic_admin";
 	const isPharmacyAdmin = userRole === "pharmacy_admin";
 	const isFacility = isClinicAdmin || isPharmacyAdmin;
@@ -67,8 +70,9 @@ export function NavUser({ user }: NavUserProps) {
 		}
 	}, [isFacility, loadFacilityProfile]);
 
-	const canInviteDoctors =
+  const canInviteDoctors =
 		facilityType === "hospital" || facilityType === "center";
+	const canSeePayment = isDoctor || canInviteDoctors;
 
 	return (
 		<>
@@ -132,10 +136,17 @@ export function NavUser({ user }: NavUserProps) {
 										<Palette className="mr-2 h-4 w-4" /> Appearance
 									</Link>
 								</DropdownMenuItem>
-								{!isPatient && !isAdmin && (
+                {!isPatient && !isAdmin && (
 									<DropdownMenuItem asChild>
 										<Link to="/settings/branches">
 											<MapPin className="mr-2 h-4 w-4" /> Branches
+										</Link>
+									</DropdownMenuItem>
+								)}
+                {canSeePayment && (
+									<DropdownMenuItem asChild>
+										<Link to="/settings/payment">
+											<Wallet className="mr-2 h-4 w-4" /> Payment
 										</Link>
 									</DropdownMenuItem>
 								)}
@@ -148,6 +159,27 @@ export function NavUser({ user }: NavUserProps) {
 										<DropdownMenuItem asChild>
 											<Link to="/wishlist">
 												<Heart className="mr-2 h-4 w-4" /> Wishlist
+											</Link>
+										</DropdownMenuItem>
+									</DropdownMenuGroup>
+								</>
+							)}
+
+              {isDoctor && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+										Doctor
+									</DropdownMenuLabel>
+									<DropdownMenuGroup>
+										<DropdownMenuItem asChild>
+											<Link to="/availability">
+												<CalendarClock className="mr-2 h-4 w-4" /> Availability
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem asChild>
+											<Link to="/my-invitations">
+												<Mail className="mr-2 h-4 w-4" /> My Invitations
 											</Link>
 										</DropdownMenuItem>
 									</DropdownMenuGroup>
@@ -167,13 +199,18 @@ export function NavUser({ user }: NavUserProps) {
 											</Link>
 										</DropdownMenuItem>
 										<DropdownMenuItem asChild>
-											<Link to="/my-invitations">
+											<Link to="/facility-invitations">
 												<Mail className="mr-2 h-4 w-4" /> My Invitations
 											</Link>
 										</DropdownMenuItem>
 										<DropdownMenuItem asChild>
 											<Link to="/branch-doctors">
 												<Users className="mr-2 h-4 w-4" /> Branch Doctors
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem asChild>
+											<Link to="/facility-availability">
+												<CalendarClock className="mr-2 h-4 w-4" /> Availability
 											</Link>
 										</DropdownMenuItem>
 									</DropdownMenuGroup>

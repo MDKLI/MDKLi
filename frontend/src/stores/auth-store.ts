@@ -14,6 +14,7 @@ interface AuthUser {
 	photoUrl?: string;
 	fullName?: string;
 	facilityName?: string;
+	facilityType?: string;
 }
 
 interface AuthState {
@@ -325,13 +326,14 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 						};
 					}
 
-					type ProfileData = {
+          type ProfileData = {
 						full_name?: string;
 						fullName?: string;
 						name?: string;
 						clinic_name?: string;
 						facility_name?: string;
 						facilityName?: string;
+						facility_type?: string;
 						photo_url?: string;
 						photoUrl?: string;
 						avatar?: string;
@@ -366,10 +368,11 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 						"";
 					const email =
 						profileData.user?.email || profileData.email || currentUser.email;
-					const username =
+          const username =
 						profileData.username ||
 						profileData.user?.username ||
 						currentUser.username;
+					const facilityType = profileData.facility_type || "";
 
 					// Update user with profile data
 					const updatedUser: AuthUser = {
@@ -378,6 +381,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 						photoUrl: photoUrl,
 						fullName: fullName,
 						facilityName: facilityName,
+						facilityType: facilityType,
 						username: username,
 					};
 

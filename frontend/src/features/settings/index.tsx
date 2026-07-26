@@ -1,14 +1,13 @@
 import { Outlet } from "@tanstack/react-router";
 import { MapPin, Palette, User, Wallet } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { isNonPharmacyFacilityAdmin } from "@/lib/facility";
 import { SidebarNav } from "./components/sidebar-nav";
 
 export function Settings() {
 	const { auth } = useAuthStore();
 	const userRole = auth.user?.role || "";
 	const isDoctor = userRole === "doctor";
-	const isFacility =
-		userRole === "clinic_admin" || userRole === "pharmacy_admin";
 
 	// Build sidebar items based on role
 	const sidebarNavItems = [
@@ -24,7 +23,10 @@ export function Settings() {
 		},
 	];
 
-	// Add Branches tab for doctors and facilities
+	// Add Branches tab for doctors and facilities (both clinics and pharmacies)
+	// (This tab is always visible for facilities)
+	const isFacility =
+		userRole === "clinic_admin" || userRole === "pharmacy_admin";
 	if (isDoctor || isFacility) {
 		sidebarNavItems.push({
 			title: "Branches",
@@ -33,16 +35,14 @@ export function Settings() {
 		});
 	}
 
-	// Add Payment tab for doctors and facilities (wallet, cards, withdrawals)
-	if (isDoctor || isFacility) {
+  // Add Payment tab ONLY for doctors and non-pharmacy facility admins
+	if (isDoctor || isNonPharmacyFacilityAdmin(userRole, auth.user?.facilityType)) {
 		sidebarNavItems.push({
 			title: "Payment",
 			href: "/settings/payment",
 			icon: <Wallet size={18} />,
 		});
 	}
-
-	// Note: Availability and My Invitations moved to main sidebar for doctors
 
 	return (
 		<div className="flex flex-col gap-6">

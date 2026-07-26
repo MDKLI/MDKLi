@@ -10,6 +10,7 @@ import {
 } from "@/lib/chat-socket";
 import { useAuthStore } from "@/stores/auth-store";
 import { useChatStore } from "@/stores/chat-store";
+import { isNonPharmacyFacilityAdmin } from "@/lib/facility";
 import {
 	getDoctorSidebarItems,
 	getFacilitySidebarItems,
@@ -137,7 +138,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					/>
 				)}
 
-				{!isAdmin && auth.user?.role === "clinic_admin" && (
+        {!isAdmin && auth.user?.role === "clinic_admin" && (
 					<NavGroup
 						title="Facility Management"
 						items={getFacilitySidebarItems(auth.user?.role)}

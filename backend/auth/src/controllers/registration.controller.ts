@@ -185,7 +185,15 @@ export const completeRegistration = async (
 				});
 				break;
 			}
-			case "clinic_admin": {
+      case "clinic_admin": {
+				const facilityTypeInput =
+					onboardingData.facility_type || onboardingData.facilityType;
+				if (facilityTypeInput === "pharmacy") {
+					throw new Error(
+						"Invalid facility type for this account type. Please register as a pharmacy instead.",
+					);
+				}
+
 				const clinicProfile = new ClinicProfile();
 
 				// Map profile data from onboardingData (sent from frontend localStorage)
@@ -262,7 +270,13 @@ export const completeRegistration = async (
 				});
 				break;
 			}
-			case "pharmacy_admin": {
+      case "pharmacy_admin": {
+				const facilityTypeInput =
+					onboardingData.facility_type || onboardingData.facilityType;
+				if (facilityTypeInput && facilityTypeInput !== "pharmacy") {
+					throw new Error("Invalid facility type for a pharmacy account.");
+				}
+
 				const pharmacyProfile = new PharmacyProfile();
 
 				// Map profile data from onboardingData (sent from frontend localStorage)
@@ -274,7 +288,7 @@ export const completeRegistration = async (
 				pharmacyProfile.phone_numbers =
 					onboardingData.phone_numbers ||
 					(onboardingData.phone_number ? [onboardingData.phone_number] : []);
-				pharmacyProfile.facility_type = onboardingData.facility_type;
+        pharmacyProfile.facility_type = "pharmacy";
 				pharmacyProfile.description = onboardingData.description;
 				pharmacyProfile.address = onboardingData.address;
 				pharmacyProfile.city = onboardingData.city;

@@ -163,6 +163,18 @@ export class RabbitMQClient {
 				},
 			});
 
+      const syncedDoctor = await prisma.doctor.upsert({
+      where: { userId: user_id },
+      update: { name: full_name || "Unknown Doctor", specialization: specialty || null, bio: description || null, avatarUrl: photo_url || null, isActive: true },
+      create: { userId: user_id, name: full_name || "Unknown Doctor", specialization: specialty || null, bio: description || null, avatarUrl: photo_url || null, isActive: true },
+      });
+
+      // Self-heal: relink any branches that synced before this doctor row existed
+      await prisma.branch.updateMany({
+      where: { ownerUserId: user_id, doctorId: null },
+      data: { doctorId: syncedDoctor.id, ownerUserId: null },
+      });
+
 			logger.info(`Synced doctor: ${id}`);
 		} catch (error) {
 			logger.error("Error syncing doctor:", error);
@@ -249,7 +261,7 @@ export class RabbitMQClient {
 					city: city || null,
 					area: area || null,
 					phoneNumbers: phone_numbers || [],
-					consultationFee: consultation_fee ? parseInt(consultation_fee) : null,
+					consultationFee: consultation_fee ? parseInt(consultation_fee) : 100,
 					mediaUrls: media_urls || [],
 					isVirtual: isVirtual || false,
 					isActive: true,
@@ -264,7 +276,7 @@ export class RabbitMQClient {
 					city: city || null,
 					area: area || null,
 					phoneNumbers: phone_numbers || [],
-					consultationFee: consultation_fee ? parseInt(consultation_fee) : null,
+					consultationFee: consultation_fee ? parseInt(consultation_fee) : 100,
 					mediaUrls: media_urls || [],
 					isVirtual: isVirtual || false,
 					isActive: true,

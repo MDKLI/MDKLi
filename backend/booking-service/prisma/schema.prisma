@@ -38,7 +38,7 @@ model Branch {
   city              String?
   area              String?
   phoneNumbers      String[] @map("phone_numbers")
-  consultationFee   Int?     @map("consultation_fee")
+  consultationFee   Int      @default(100) @map("consultation_fee")
   mediaUrls         String[] @map("media_urls")
   googleMapsUrl     String?  @map("google_maps_url")
   latitude          Float?

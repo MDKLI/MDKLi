@@ -120,6 +120,7 @@ export function SettingsBranches() {
 
 	const userRole = auth.user?.role || "";
 	const isDoctor = userRole === "doctor";
+  const isFacility = userRole === "clinic_admin" || userRole === "pharmacy_admin";
 
 	const openImageViewer = (images: string[], index: number) => {
 		setViewerImages(images);
@@ -245,6 +246,11 @@ export function SettingsBranches() {
 			toast.error("Please fill in all required fields");
 			return;
 		}
+
+    if (isDoctor && (!editingBranch.consultationFee || editingBranch.consultationFee.trim() === "")) {
+      toast.error("Please enter a consultation fee");
+      return;
+    }
 
 		const validPhoneNumbers = phoneNumbers.filter((p) => p.trim() !== "");
 		if (validPhoneNumbers.length === 0) {
@@ -564,7 +570,7 @@ export function SettingsBranches() {
 													)}
 
 												{/* Consultation Fee */}
-												{isDoctor && branch.consultationFee && (
+                        {(isDoctor || isFacility) && branch.consultationFee && (
 													<div className="mt-2">
 														<p className="text-xs text-muted-foreground">
 															Consultation Fee:
@@ -868,24 +874,26 @@ export function SettingsBranches() {
 								</Button>
 							</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="consultationFee">Consultation Fee</Label>
-								<Input
-									id="consultationFee"
-									value={editingBranch.consultationFee || ""}
-									onChange={(e) =>
-										setEditingBranch({
-											...editingBranch,
-											consultationFee: e.target.value,
-										})
-									}
-									placeholder="e.g., 300 EGP"
-								/>
-								<p className="text-xs text-amber-500">
-									Note: MDKLI takes a 10% platform fee on every consultation fee
-									collected through the app.
-								</p>
-							</div>
+              {isDoctor && (
+                <div className="space-y-2">
+                  <Label htmlFor="consultationFee">Consultation Fee</Label>
+                  <Input
+                    id="consultationFee"
+                    value={editingBranch.consultationFee || ""}
+                    onChange={(e) =>
+                      setEditingBranch({
+                        ...editingBranch,
+                        consultationFee: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., 300 EGP"
+                  />
+                  <p className="text-xs text-amber-500">
+                    Note: MDKLI takes a 10% platform fee on every consultation fee
+                    collected through the app.
+                  </p>
+                </div>
+              )}
 
 							{/* Media Upload Section */}
 							<div className="space-y-2">

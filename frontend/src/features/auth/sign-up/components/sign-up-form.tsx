@@ -1,6 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
-import { Building2, Loader2, Stethoscope, User, UserPlus } from "lucide-react";
+import {
+	Building2,
+	Loader2,
+	Pill,
+	Stethoscope,
+	User,
+	UserPlus,
+} from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -172,7 +179,7 @@ export function SignUpForm({
 						</Label>
 					</div>
 
-					<div>
+          <div>
 						<RadioGroupItem
 							value="facility"
 							id="facility"
@@ -186,7 +193,27 @@ export function SignUpForm({
 							<div>
 								<span className="font-semibold block">Medical Facility</span>
 								<span className="text-sm text-muted-foreground">
-									Hospital, Clinic, Medical Center, or Pharmacy
+									Hospital or Medical Center
+								</span>
+							</div>
+						</Label>
+					</div>
+
+					<div>
+						<RadioGroupItem
+							value="pharmacy"
+							id="pharmacy"
+							className="peer sr-only"
+						/>
+						<Label
+							htmlFor="pharmacy"
+							className="flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
+						>
+							<Pill className="h-8 w-8 text-primary" />
+							<div>
+								<span className="font-semibold block">Pharmacy</span>
+								<span className="text-sm text-muted-foreground">
+									Manage your pharmacy and orders
 								</span>
 							</div>
 						</Label>
@@ -204,9 +231,10 @@ export function SignUpForm({
 				{...props}
 			>
 				<div className="flex items-center gap-2 mb-4 p-3 bg-muted rounded-lg">
-					{selectedRole === "patient" && <User className="h-5 w-5" />}
+          {selectedRole === "patient" && <User className="h-5 w-5" />}
 					{selectedRole === "doctor" && <Stethoscope className="h-5 w-5" />}
 					{selectedRole === "facility" && <Building2 className="h-5 w-5" />}
+					{selectedRole === "pharmacy" && <Pill className="h-5 w-5" />}
 					<span className="capitalize font-medium">{selectedRole}</span>
 					<Button
 						type="button"

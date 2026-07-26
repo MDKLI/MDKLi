@@ -133,6 +133,7 @@ export const registerUser = async (
 					]),
 				);
 				doctorProfile.user = user;
+        doctorProfile.is_active = false;
 				// Clinic is optional - doctor can join later or create private practice
 				if (profileData.clinicId) {
 					const clinicRepo = queryRunner.manager.getRepository(ClinicProfile);

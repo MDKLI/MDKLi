@@ -1323,10 +1323,16 @@ function FacilityBasicStep({ onNext }: { onNext: () => void }) {
 
 // Facility Step 2: Facility Type & Bio
 function FacilityInfoStep({ onNext }: { onNext: () => void }) {
+	const pendingRole = localStorage.getItem("pendingRegistrationRole");
+	const allowedFacilityTypes =
+		pendingRole === "pharmacy_admin"
+			? facilityTypes.filter((t) => t.id === "pharmacy")
+			: facilityTypes.filter((t) => t.id !== "pharmacy");
+
 	const form = useForm({
 		resolver: zodResolver(facilityInfoSchema),
 		defaultValues: {
-			facilityType: "hospital",
+			facilityType: allowedFacilityTypes[0]?.id ?? "hospital",
 			bio: "",
 		},
 	});
@@ -1359,17 +1365,17 @@ function FacilityInfoStep({ onNext }: { onNext: () => void }) {
 							value={field.value}
 							className="flex flex-col gap-2"
 						>
-							{facilityTypes.map((type) => (
-								<div
-									key={type.id}
-									className="flex items-center space-x-2 border p-3 rounded-lg cursor-pointer hover:bg-muted"
-								>
-									<RadioGroupItem value={type.id} id={type.id} />
-									<Label htmlFor={type.id} className="cursor-pointer">
-										{type.name}
-									</Label>
-								</div>
-							))}
+            {allowedFacilityTypes.map((type) => (
+							<div
+								key={type.id}
+								className="flex items-center space-x-2 border p-3 rounded-lg cursor-pointer hover:bg-muted"
+							>
+								<RadioGroupItem value={type.id} id={type.id} />
+								<Label htmlFor={type.id} className="cursor-pointer">
+									{type.name}
+								</Label>
+							</div>
+						))}
 						</RadioGroup>
 					)}
 				/>
@@ -1475,7 +1481,11 @@ function BranchesStep({
 			toast.error("Please add at least one phone number");
 			return;
 		}
-
+    // Require consultation fee for doctors
+    if (_isDoctor && (!data.consultationFee || data.consultationFee.trim() === "")) {
+      toast.error("Consultation fee is required");
+      return;
+    }
 		onAddBranch({
 			...data,
 			phoneNumbers: validPhoneNumbers,
@@ -1766,21 +1776,19 @@ function BranchesStep({
 						</Button>
 					</div>
 
-					{/* Consultation Fee - Only for doctors */}
-					<div className="space-y-2">
-						<Label htmlFor="consultationFee">Consultation Fee</Label>
-						<Input
-							{...form.register("consultationFee")}
-							placeholder="e.g., 300 EGP"
-						/>
-						<p className="text-xs text-muted-foreground">
-							Set your consultation fee for this branch
-						</p>
-						<p className="text-xs text-amber-500">
-							Note: MDKLI takes a 10% platform fee on every consultation fee
-							collected through the app.
-						</p>
-					</div>
+          {/* Consultation Fee - Required for doctors */}
+          {_isDoctor && (
+            <div className="space-y-2">
+              <Label htmlFor="consultationFee">Consultation Fee *</Label>
+              <Input
+                {...form.register("consultationFee")}
+                placeholder="e.g., 300"
+              />
+              <p className="text-xs text-amber-500">
+                MDKLI takes a 10% platform fee from each consultation.
+              </p>
+            </div>
+          )}
 
 					{/* Branch Media Upload */}
 					<div className="space-y-2">
