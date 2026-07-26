@@ -230,8 +230,14 @@ export const updateMyProfile = async (
 						req.body.bio || req.body.description || profile.description,
 				};
 
-				// Only update facility_type if provided (during onboarding/signup)
+        // Only update facility_type if provided (during onboarding/signup)
 				if (req.body.facilityType) {
+					if (req.body.facilityType === "pharmacy") {
+						res.status(400).json({
+							message: "Invalid facility type for this account type.",
+						});
+						return;
+					}
 					updateData.facility_type = req.body.facilityType;
 				}
 

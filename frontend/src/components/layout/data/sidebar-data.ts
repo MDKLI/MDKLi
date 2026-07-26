@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import type { SidebarData } from "../types";
+import { isFacilityAdmin, PHARMACY_FACILITY_TYPE } from "@/lib/facility";
 
 // This is the static sidebar data
 // User info will be dynamically updated in the component
@@ -123,7 +124,7 @@ export const sidebarData: SidebarData = {
 // Helper function to get profile menu items based on user role
 export function getProfileMenuItems(role: string | undefined) {
 	const isDoctor = role === "doctor";
-	const isFacility = role === "clinic_admin" || role === "pharmacy_admin";
+	const isFacility = role === "clinic_admin";
 	const isAdmin = role === "admin" || role === "superadmin";
 
 	// Admin users get minimal profile menu - no Branches, no Wishlist
@@ -190,9 +191,11 @@ export function getDoctorSidebarItems(role: string | undefined) {
 }
 
 // Helper function to get facility-specific sidebar items (hospitals/medical centers only)
-export function getFacilitySidebarItems(role: string | undefined) {
-	const isFacility = role === "clinic_admin";
-	if (!isFacility) {
+export function getFacilitySidebarItems(
+	role: string | undefined,
+	facilityType?: string,
+) {
+	if (!isFacilityAdmin(role) || facilityType === PHARMACY_FACILITY_TYPE) {
 		return [];
 	}
 	return [

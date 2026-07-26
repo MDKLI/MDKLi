@@ -145,7 +145,7 @@ export function DoctorBooking({ doctorId, branches }: DoctorBookingProps) {
 		setBookingLoading(true);
 		try {
 			const result = await bookingApi.createBooking({
-				doctor_id: doctorId,
+        doctor_id: selectedBranch.doctorId || doctorId,
 				branch_id: selectedBranch.id,
 				patient_id: user?.id || "",
 				patient_email: patientEmail || user?.email,

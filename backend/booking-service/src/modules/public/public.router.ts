@@ -362,22 +362,26 @@ router.post("/appointments", async (req, res, next) => {
 			return;
 		}
 
-		// Resolve consultation fee: facility branches can override per-doctor via BranchAssignment
-		let consultationFee = branch.consultationFee;
-		if (requestedDoctorId && requestedDoctorId !== branch.doctorId) {
-			const assignment = await prisma.branchAssignment.findFirst({
-				where: { branchId, doctorId: requestedDoctorId, isActive: true },
-			});
-			if (assignment?.consultationFee != null)
-				consultationFee = assignment.consultationFee;
-		}
+  // Fallback default fee – ensures booking always works even if the branch fee
+  // wasn't synced yet. Change this number to your desired default (e.g., 100 EGP).
+  const DEFAULT_CONSULTATION_FEE = 100;
 
-		if (!consultationFee || consultationFee <= 0) {
-			res
-				.status(400)
-				.json({ error: "This branch has no consultation fee configured" });
-			return;
-		}
+  let consultationFee: number = branch.consultationFee ?? DEFAULT_CONSULTATION_FEE;
+  if (requestedDoctorId && requestedDoctorId !== branch.doctorId) {
+    const assignment = await prisma.branchAssignment.findFirst({
+      where: { branchId, doctorId: requestedDoctorId, isActive: true },
+    });
+    if (assignment?.consultationFee != null)
+      consultationFee = assignment.consultationFee;
+  }
+
+  // Only reject if the fee is still missing after all fallbacks
+  if (consultationFee == null || consultationFee <= 0) {
+    res
+      .status(400)
+      .json({ error: "This branch has no consultation fee configured" });
+    return;
+  }
 
 		const { paymentMethod, walletPhone, patientPhone } = req.body;
 
