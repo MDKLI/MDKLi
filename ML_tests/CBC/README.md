@@ -48,7 +48,6 @@ The trained model artifacts (`artifacts/cbc_hierarchical_model.pkl`,
 `scaler.joblib`, `label_encoders.joblib`, etc.) are already included in the
 repo, so no training or model-building step is needed to run the API.
 
-
 ## Run with Docker
 
 ```bash
@@ -80,6 +79,33 @@ Health check:
 
 ```
 GET /v1/health
+```
+
+## To Test
+
+**`POST /v1/predict/from-report`** — upload a lab report image/PDF:
+
+<img width="761" height="533" alt="Screenshot From 2026-07-15 04-55-31" src="https://github.com/user-attachments/assets/f1270970-eb4f-4bf9-8db4-75e9db5cc6a3" />
+
+**`POST /v1/predict/from-values`** — send raw lab values as JSON:
+
+```json
+{
+    "WBC": 7.4,
+    "RBC": 5.27,
+    "HGB": 13.9,
+    "HCT": 43.8,
+    "MCV": 88.6,
+    "MCH": 29.4,
+    "MCHC": 33.4,
+    "PLT": 248,
+    "PDW": 12.1,
+    "PCT": 0.25,
+    "LYMp": 32.0,
+    "NEUTp": 62.0,
+    "LYMn": 2.4,
+    "NEUTn": 4.6
+}
 ```
 
 ## Tests
