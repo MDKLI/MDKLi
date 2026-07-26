@@ -7,7 +7,7 @@ version: '3.8'
 
 services:
   auth-service:
-    image: ghcr.io/mdkli/mdkli-auth-service:latest
+    image: ghcr.io/mdkli/mdkli-auth-service:e64c078
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -43,7 +43,7 @@ services:
       - app-network
 
   search-service:
-    image: ghcr.io/mdkli/mdkli-search-service:latest
+    image: ghcr.io/mdkli/mdkli-search-service:e64c078
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -72,7 +72,7 @@ services:
       - app-network
 
   booking-service:
-    image: ghcr.io/mdkli/mdkli-booking-service:latest
+    image: ghcr.io/mdkli/mdkli-booking-service:e64c078
     restart: unless-stopped
     ports:
       - "3004:3004"
@@ -93,7 +93,7 @@ services:
       - app-network
 
   chat-service:
-    image: ghcr.io/mdkli/mdkli-chat-service:latest
+    image: ghcr.io/mdkli/mdkli-chat-service:e64c078
     restart: unless-stopped
     ports:
       - "3005:3005"
@@ -123,7 +123,7 @@ services:
       - app-network
 
   admin-service:
-    image: ghcr.io/mdkli/mdkli-admin-service:latest
+    image: ghcr.io/mdkli/mdkli-admin-service:e64c078
     restart: unless-stopped
     ports:
       - "3006:3006"
@@ -143,7 +143,7 @@ services:
       - app-network
 
   frontend:
-    image: ghcr.io/mdkli/mdkli-frontend:latest
+    image: ghcr.io/mdkli/mdkli-frontend:e64c078
     restart: unless-stopped
     ports:
       - "80:4173"
