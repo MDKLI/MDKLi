@@ -14,6 +14,7 @@ import { rabbitMQService } from "./services/rabbitmq.service";
 import logger from "./utility/logger";
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 const BOOKING_SERVICE_URL =
 	process.env.BOOKING_SERVICE_URL || "http://booking-service:3004";

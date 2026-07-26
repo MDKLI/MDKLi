@@ -33,7 +33,7 @@ export class DoctorBranchInvitationBranch {
 	@Column({ name: "branch_id" })
 	branchId: string;
 
-	@Column({ type: "numeric", precision: 10, scale: 2, nullable: true })
+  @Column({ name: "consultation_fee", type: "numeric", precision: 10, scale: 2, nullable: true })
 	consultationFee: number;
 
 	@CreateDateColumn({ name: "created_at" })
