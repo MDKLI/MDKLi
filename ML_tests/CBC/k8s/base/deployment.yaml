@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbc-api
+  labels:
+    app: cbc-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cbc-api
+  template:
+    metadata:
+      labels:
+        app: cbc-api
+    spec:
+      containers:
+        - name: cbc-api
+          image: omaraldujawy/cbc-api:latest
+          args: ["api"]
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: cbc-config
+            - secretRef:
+                name: cbc-secrets
+          volumeMounts:
+            - name: artifacts
+              mountPath: /app/artifacts
+          startupProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 30 # up to 150s to come up on first boot (PVC init, model load)
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            periodSeconds: 20
+            failureThreshold: 3 # restarts the container after ~60s of being unhealthy
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: cbc-artifacts-pvc

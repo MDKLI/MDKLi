@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+        # Catches an accidental `git add` of a large binary (e.g. a model
+        # .pkl) that should go through DVC / the artifacts/ allowlist
+        # instead of being committed directly.
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+# Each hook runs in its own isolated environment that pre-commit manages
+# (pinned by `rev` above) — ruff/black do NOT need to be added to
+# requirements/dev.txt for `make lint` to work locally or in CI.

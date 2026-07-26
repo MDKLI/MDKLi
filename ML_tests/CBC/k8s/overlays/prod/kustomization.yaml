@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - ../../mlflow
+
+replicas:
+  - name: cbc-api
+    count: 3
+
+patches:
+  - target:
+      kind: Deployment
+      name: cbc-api
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: omaraldujawy/cbc-api:v1.0.0
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "2"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
+  - target:
+      kind: Ingress
+      name: cbc-api-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: cbc-api.example.com

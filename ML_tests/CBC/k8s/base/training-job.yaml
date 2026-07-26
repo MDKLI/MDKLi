@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: cbc-train-
+  labels:
+    app: cbc-train
+
+spec:
+  backoffLimit: 6 # retries up to 6 times (k8s backs off exponentially between attempts) before giving up
+
+  template:
+    metadata:
+      labels:
+        app: cbc-train
+
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: cbc-train
+          image: omaraldujawy/cbc-api:latest
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - train
+            - --model-mode
+            - hierarchical
+
+          envFrom:
+            - configMapRef:
+                name: cbc-config
+            - secretRef:
+                name: cbc-secrets
+
+          volumeMounts:
+            - name: artifacts
+              mountPath: /app/artifacts
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: cbc-artifacts-pvc

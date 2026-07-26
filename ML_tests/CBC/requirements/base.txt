@@ -1,0 +1,13 @@
+pandas==2.3.3
+numpy==2.4.6 
+scikit-learn==1.9.0
+xgboost==3.2.0
+joblib==1.5.3
+matplotlib==3.11.0
+seaborn==0.13.2
+scipy==1.18.0
+zenml[server]==0.96.1
+# zenml == 0.96.1 make error because som libararies related by zenml not installed like sql*, etc so when make zenml[server]==0.96.1 install it automaticlly
+SQLAlchemy-Utils==0.42.1
+bcrypt==4.0.1
+mlflow==3.14.0

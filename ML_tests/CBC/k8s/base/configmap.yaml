@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cbc-config
+data:
+  MODEL_MODE: "hierarchical"
+  LOG_LEVEL: "INFO"
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+  VISION_MODEL_NAME: "gemini-flash-latest"

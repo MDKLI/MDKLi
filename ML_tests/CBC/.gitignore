@@ -1,0 +1,40 @@
+# --- Secrets ---
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- Virtual environments ---
+cbc/
+venv/
+.venv/
+
+# --- ZenML / MLflow ---
+.zen/
+mlruns/
+*.db
+
+# --- Generated data / intermediate artifacts ---
+extracted_data/
+artifacts/mi_selection/
+artifacts/power_transform_plots/
+
+# --- Packaging ---
+*.zip
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- DVC-tracked data ---
+# The whole data/ directory is tracked as one unit via data.dvc (see
+# README "Data versioning"). git only tracks data.dvc itself; the actual
+# content is managed by DVC.
+/data
+
+
+minikube-linux-amd64

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: omaraldujawy/cbc-mlflow:latest
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: mlflow-data
+              mountPath: /mlflow_data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: mlflow-data
+          persistentVolumeClaim:
+            claimName: mlflow-data-pvc

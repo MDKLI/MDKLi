@@ -1,0 +1,98 @@
+name: CD
+
+# Deploy jobs run on a SELF-HOSTED runner (see deploy-dev/deploy-prod) that
+# you register on the same machine minikube runs on:
+#   repo Settings -> Actions -> Runners -> New self-hosted runner
+# This avoids the KUBE_CONFIG-for-a-remote-cluster approach entirely, since
+# minikube has no public API server a GitHub-hosted runner could reach.
+# If you later move to a real remote cluster (GKE/EKS/etc.), switch
+# `runs-on: self-hosted` back to `runs-on: ubuntu-latest` and reintroduce a
+# KUBE_CONFIG secret + azure/k8s-set-context step instead.
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: omaraldujawy/cbc-api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: tag
+        run: |
+          # Unique tag per build (short commit SHA) — deliberately never
+          # ":latest". This is the exact anti-pattern that previously caused
+          # a stale image to keep running after a rebuild: with a mutable
+          # tag + imagePullPolicy: IfNotPresent, a node that already has
+          # "latest" cached has no reason to know a new one exists. A
+          # unique tag makes every deploy unambiguous.
+          echo "image_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.image_tag }}
+
+  deploy-dev:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # self-hosted: runs on your own machine, which already has kubectl
+    # configured against your local minikube cluster — no KUBE_CONFIG
+    # secret needed, since a GitHub-hosted runner can't reach minikube at
+    # all (it has no public API server endpoint). Register a runner first:
+    # repo Settings -> Actions -> Runners -> New self-hosted runner.
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Deploy to dev
+        working-directory: k8s/overlays/dev
+        run: |
+          kustomize edit set image omaraldujawy/cbc-api=${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+          kubectl apply -k .
+          kubectl rollout status deployment/cbc-api --timeout=120s
+
+  deploy-prod:
+    needs: build-and-push
+    if: github.event_name == 'release'
+    runs-on: self-hosted  # see deploy-dev comment — no KUBE_CONFIG needed
+    environment: production  # requires manual approval if configured in repo settings
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Deploy to prod
+        working-directory: k8s/overlays/prod
+        run: |
+          kustomize edit set image omaraldujawy/cbc-api=${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+          kubectl apply -k .
+          kubectl rollout status deployment/cbc-api --timeout=180s
