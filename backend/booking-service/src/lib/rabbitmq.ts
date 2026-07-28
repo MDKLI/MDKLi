@@ -19,8 +19,16 @@ export class RabbitMQClient {
 
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
-				this.connection = await amqp.connect(rabbitmqUrl);
+        this.connection = await amqp.connect(rabbitmqUrl);
 				this.channel = await this.connection.createChannel();
+
+				// Process one message at a time. Without this, amqplib delivers all
+				// buffered messages to the consume callback immediately and lets them
+				// run concurrently — so branch.created can finish its doctor lookup
+				// before doctor.created has committed, even though it was published
+				// and delivered after it. Ordering here is what the self-heal in
+				// handleDoctorEvent exists to paper over; this removes the need for it.
+				await this.channel.prefetch(1);
 
 				// Create exchange
 				await this.channel.assertExchange(this.EXCHANGE_NAME, "topic", {

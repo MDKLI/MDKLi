@@ -65,11 +65,16 @@ function PharmacyDetailPage() {
 				limit: 100,
 			});
 
-			// Find pharmacy by matching username with facility_name or user_id
+      // Find pharmacy by matching username with facility_name or user_id.
+			// The search-results card builds the slug as facility_name with spaces
+			// turned into hyphens (see PharmacyCard in SearchPage.tsx), so the same
+			// transform must be applied here or a hyphenated slug never matches.
 			const found = data.data?.find(
 				(p: RawPharmacyResult) =>
-					p.facility_name?.toLowerCase() === username?.toLowerCase() ||
-					p.id === username,
+					p.facility_name?.toLowerCase().replace(/\s+/g, "-") ===
+						username?.toLowerCase() ||
+					p.id === username ||
+					p.user_id === username,
 			);
 
 			if (found) {

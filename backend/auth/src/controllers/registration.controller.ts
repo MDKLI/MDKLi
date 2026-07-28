@@ -154,6 +154,11 @@ export const completeRegistration = async (
 		});
 		await queryRunner.manager.save(user);
 
+		// Collect what needs publishing here; the actual publish only fires
+		// after commitTransaction() succeeds below, so the event-publisher's
+		// separate DB connection can always see the committed rows.
+		const pendingEvents: Array<() => void> = [];
+
 		// Create profile based on role
 		switch (role) {
 			case "patient": {
@@ -220,9 +225,20 @@ export const completeRegistration = async (
 				await queryRunner.manager.save(clinicProfile);
 				logger.info("Clinic profile saved successfully");
 
-				// Create branches if provided
+        // Create branches if provided
 				if (onboardingData.branches && onboardingData.branches.length > 0) {
-					await createBranches(queryRunner, user, onboardingData.branches);
+					const savedBranches = await createBranches(
+						queryRunner,
+						user,
+						onboardingData.branches,
+					);
+					for (const branch of savedBranches) {
+						pendingEvents.push(() => {
+							publishBranchCreated(branch.id, user.id).catch((err) => {
+								logger.error("Failed to publish branch.created event:", err);
+							});
+						});
+					}
 				}
 
 				// Publish event to RabbitMQ (after transaction commits)
@@ -380,13 +396,18 @@ export const checkPendingRegistration = async (
 	}
 };
 
-// Helper function to create branches during registration
+// Helper function to create branches during registration.
+// Returns the saved branches so the caller can publish branch.created
+// events only after the outer transaction commits (see pendingEvents
+// pattern in completeRegistration) — publishing from inside here would
+// race the same way doctor/facility events did.
 async function createBranches(
 	queryRunner: QueryRunner,
 	user: User,
 	branchesData: any[],
-): Promise<void> {
+): Promise<Branch[]> {
 	const branchRepo = queryRunner.manager.getRepository(Branch);
+	const createdBranches: Branch[] = [];
 
 	for (const branchData of branchesData) {
 		const branch = new Branch();
@@ -454,11 +475,9 @@ async function createBranches(
 			branch.media_urls = uploadedUrls;
 		}
 
-		await branchRepo.save(branch);
-
-		// Publish branch created event
-		publishBranchCreated(branch.id, user.id).catch((err) => {
-			logger.error("Failed to publish branch.created event:", err);
-		});
+    await branchRepo.save(branch);
+		createdBranches.push(branch);
 	}
+
+	return createdBranches;
 }
