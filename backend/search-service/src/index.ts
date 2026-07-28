@@ -44,11 +44,33 @@ app.use(
 	},
 );
 
+// Retry helper: Postgres can still refuse a connection for a brief window
+// even after the entrypoint's TCP check passes (e.g. it accepts the socket
+// then closes it while finishing its own startup). Retry a few times before
+// giving up, instead of exiting on the very first failure.
+async function initializeDataSourceWithRetry(
+	maxAttempts = 10,
+	delayMs = 3000,
+) {
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		try {
+			await AppDataSource.initialize();
+			return;
+		} catch (error) {
+			if (attempt === maxAttempts) throw error;
+			logger.warn(
+				`Database connection attempt ${attempt}/${maxAttempts} failed, retrying in ${delayMs}ms...`,
+			);
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
+	}
+}
+
 // Initialize database and start server
 const startServer = async () => {
 	try {
 		// Initialize TypeORM
-		await AppDataSource.initialize();
+		await initializeDataSourceWithRetry();
 		logger.info("✅ Database connected successfully");
 
 		// Initialize Meilisearch
