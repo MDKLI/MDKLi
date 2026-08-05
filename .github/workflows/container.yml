@@ -145,15 +145,19 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.service.name }},mode=max
 
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@v0.18.0
-        with:
-          image: local/${{ matrix.service.image }}:${{ github.sha }}
-          format: spdx-json
-          output-file: ${{ matrix.service.name }}-sbom.spdx.json
+        # Run Syft inside Docker on the runner to avoid using a third-party 'uses' action unpinned by hash.
+        run: |
+          echo "Generating SBOM for ${{ matrix.service.name }}"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD":/workdir \
+            -w /workdir \
+            anchore/syft:0.113.0 \
+            local/${{ matrix.service.image }}:${{ github.sha }} -o spdx-json > ${{ matrix.service.name }}-sbom.spdx.json || true
         continue-on-error: true
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom-${{ matrix.service.name }}
           path: ${{ matrix.service.name }}-sbom.spdx.json
