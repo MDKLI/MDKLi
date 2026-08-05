@@ -21,7 +21,7 @@ image_to_text = ImageToText()
 async def on_chat_start():
     """Initialize the chat session"""
     # thread_id = cl.user_session.get("id")
-    cl.user_session.set("thread_id", 1)
+    cl.user_session.set("thread_id", 3333)
 
 
 @cl.on_message
