@@ -145,7 +145,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.service.name }},mode=max
 
       - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@d94f46e13c6c62f59525ac9a1e147a99dc0b9bf5 # v0.17.0
+        uses: anchore/sbom-action@v0.18.0
         with:
           image: local/${{ matrix.service.image }}:${{ github.sha }}
           format: spdx-json
@@ -153,7 +153,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-${{ matrix.service.name }}
           path: ${{ matrix.service.name }}-sbom.spdx.json
