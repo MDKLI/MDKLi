@@ -31,6 +31,8 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
+          - name: seeder
+            path: scripts/seeder
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}
@@ -229,6 +231,8 @@ jobs:
             path: backend/admin-service
           - name: search-service
             path: backend/search-service
+          - name: seeder
+            path: scripts/seeder
     defaults:
       run:
         working-directory: ${{ matrix.service.path }}

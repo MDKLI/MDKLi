@@ -621,11 +621,14 @@ function DoctorCard({ doctor }: { doctor: Doctor }) {
 					<Separator className="my-3" />
 
 					<div className="space-y-2 text-sm">
-						{/* Specialty */}
+            {/* Title + Specialty */}
 						{doctor.specialty && (
 							<div className="flex items-center gap-2 text-muted-foreground">
 								<Stethoscope className="h-4 w-4 flex-shrink-0" />
 								<span className="font-medium text-foreground">
+									{doctor.title && (
+										<span className="capitalize">{doctor.title} · </span>
+									)}
 									{doctor.specialty}
 								</span>
 							</div>

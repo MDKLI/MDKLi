@@ -270,6 +270,8 @@ services:
       - HOSPITAL_COUNT=3
       - CENTER_COUNT=3
       - PATIENT_COUNT=20
+    volumes:
+      - seeder_data:/app/data
     depends_on:
       auth-service:
         condition: service_started
@@ -279,7 +281,26 @@ services:
         condition: service_started
     networks:
       - app-network
-    profiles: ["seed"]
+
+  migrate-search:
+    build: ./backend/search-service
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=searchdb
+      - AUTH_SERVICE_URL=http://auth-service:3000
+    entrypoint: []
+    command: ["node", "dist/scripts/migrateFromAuth.js"]
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+      search-service:
+        condition: service_started
+    networks:
+      - app-network
 
 networks:
   app-network:
@@ -291,3 +312,4 @@ volumes:
   meilisearch_data:
   rabbitmq_data:
   redis_data:
+  seeder_data:

@@ -42,7 +42,7 @@ export async function migrateDoctorsFromAuth() {
     `);
 
 		// Fetch doctor's own branches (private practice)
-		const ownBranchesResult = await client.query(`
+    const ownBranchesResult = await client.query(`
       SELECT 
         d.id as doctor_id,
         b.name,
@@ -51,10 +51,10 @@ export async function migrateDoctorsFromAuth() {
         b.address,
         b.phone_numbers,
         b.consultation_fee,
+        b.media_urls,
         'private_practice' as branch_type
       FROM doctors d
       JOIN branches b ON b.user_id = d.user_id
-      WHERE d.is_active = true
     `);
 
 		// Fetch branches from invitations (hospital/center)
@@ -66,7 +66,7 @@ export async function migrateDoctorsFromAuth() {
         b.area,
         b.address,
         b.phone_numbers,
-        db."consultationFee" as consultation_fee,
+        db.consultation_fee,
         'hospital' as branch_type
       FROM doctor_branches db
       JOIN branches b ON db.branch_id = b.id
@@ -83,13 +83,14 @@ export async function migrateDoctorsFromAuth() {
 			if (!branchesByDoctor[branch.doctor_id]) {
 				branchesByDoctor[branch.doctor_id] = [];
 			}
-			branchesByDoctor[branch.doctor_id].push({
+      branchesByDoctor[branch.doctor_id].push({
 				name: branch.name,
 				city: branch.city,
 				area: branch.area,
 				address: branch.address,
 				phone_numbers: branch.phone_numbers,
 				consultation_fee: branch.consultation_fee,
+				media_urls: branch.media_urls,
 				branch_type: branch.branch_type,
 			});
 		}
@@ -135,8 +136,8 @@ export async function migrateDoctorsFromAuth() {
 				description: row.description,
 				photo_url: row.photo_url,
 				phone_number: row.phone_number,
-				city: row.city,
-				area: null, // clinic_profiles doesn't have area column
+        city: row.city || branchesByDoctor[row.id]?.[0]?.city || null,
+				area: branchesByDoctor[row.id]?.[0]?.area || null,
 				has_private_practice: row.has_private_practice || false,
 				clinic_name: row.clinic_name,
 				clinic_type: row.clinic_type,
@@ -163,8 +164,8 @@ export async function migrateFacilitiesFromAuth() {
 		const client = new Client(AUTH_DB_CONFIG);
 		await client.connect();
 
-		// Fetch all facilities from clinic_profiles (includes hospitals, centers, and pharmacies)
-		const result = await client.query(`
+    // Fetch hospitals/centers from clinic_profiles
+		const clinicResult = await client.query(`
       SELECT 
         id,
         user_id,
@@ -179,8 +180,26 @@ export async function migrateFacilitiesFromAuth() {
       FROM clinic_profiles
     `);
 
+		// Fetch pharmacies from their own table (separate entity from clinic_profiles)
+		const pharmacyResult = await client.query(`
+      SELECT 
+        id,
+        user_id,
+        pharmacy_name as clinic_name,
+        'pharmacy' as facility_type,
+        description,
+        city,
+        address,
+        phone_numbers,
+        photo_url,
+        status
+      FROM pharmacy_profiles
+    `);
+
+		const result = { rows: [...clinicResult.rows, ...pharmacyResult.rows] };
+
 		// Fetch all branches for facilities
-		const branchesResult = await client.query(`
+    const branchesResult = await client.query(`
       SELECT 
         b.user_id,
         b.name,
@@ -190,8 +209,10 @@ export async function migrateFacilitiesFromAuth() {
         b.phone_numbers,
         'branch' as branch_type
       FROM branches b
-      JOIN clinic_profiles cp ON b.user_id = cp.user_id
+      LEFT JOIN clinic_profiles cp ON b.user_id = cp.user_id
+      LEFT JOIN pharmacy_profiles pp ON b.user_id = pp.user_id
       WHERE cp.status IN ('verified', 'pending')
+        OR pp.status IN ('verified', 'pending')
     `);
 
 		// Group branches by user_id
