@@ -16,10 +16,15 @@ const facilityRepo = () => AppDataSource.getRepository(SearchableFacility);
 // Search both doctors and facilities
 export const searchAll = async (req: Request, res: Response): Promise<void> => {
 	try {
-		const { q: query, type, ...filters } = req.query;
+		// Accept parameters in request body to avoid sensitive data in URLs. Backwards-compatible GET is supported but deprecated.
+		const source: any = req.method === "GET" ? req.query : req.body;
+		if (req.method === "GET") {
+			res.setHeader("X-Deprecated-Search-Method", "GET is deprecated; use POST with JSON body");
+		}
+		const { q: query, type, ...filters } = source;
 
 		if (!query || typeof query !== "string") {
-			res.status(400).json({ error: 'Query parameter "q" is required' });
+			res.status(400).json({ error: 'Request must include string "q"' });
 			return;
 		}
 
@@ -62,6 +67,11 @@ export const searchDoctors = async (
 	res: Response,
 ): Promise<void> => {
 	try {
+		// Accept params in request body to avoid sensitive data in URLs. Backwards-compatible GET is supported but deprecated.
+		const source: any = req.method === "GET" ? req.query : req.body;
+		if (req.method === "GET") {
+			res.setHeader("X-Deprecated-Search-Method", "GET is deprecated; use POST with JSON body");
+		}
 		const {
 			q: query,
 			city,
@@ -71,10 +81,10 @@ export const searchDoctors = async (
 			specialty,
 			title,
 			...otherFilters
-		} = req.query;
+		} = source;
 
 		if (!query || typeof query !== "string") {
-			res.status(400).json({ error: 'Query parameter "q" is required' });
+			res.status(400).json({ error: 'Request must include string "q"' });
 			return;
 		}
 
@@ -169,10 +179,15 @@ export const searchFacilities = async (
 	res: Response,
 ): Promise<void> => {
 	try {
-		const { q: query, city, area, ...otherFilters } = req.query;
+		// Accept params in request body to avoid sensitive data in URLs. Backwards-compatible GET is supported but deprecated.
+		const source: any = req.method === "GET" ? req.query : req.body;
+		if (req.method === "GET") {
+			res.setHeader("X-Deprecated-Search-Method", "GET is deprecated; use POST with JSON body");
+		}
+		const { q: query, city, area, ...otherFilters } = source;
 
 		if (!query || typeof query !== "string") {
-			res.status(400).json({ error: 'Query parameter "q" is required' });
+			res.status(400).json({ error: 'Request must include string "q"' });
 			return;
 		}
 

@@ -17,7 +17,39 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+// Configure CORS using CORS_ALLOWED environment variable (comma-separated list).
+// In production CORS_ALLOWED must be explicitly set and must not include '*'.
+const _corsEnv = process.env.CORS_ALLOWED;
+const _devDefaults = "http://localhost:5173,http://localhost:3000,http://localhost";
+const _allowedOrigins = (
+	_corsEnv || (process.env.NODE_ENV === "production" ? "" : _devDefaults)
+)
+	.split(",")
+	.map((s) => s.trim())
+	.filter(Boolean);
+if (process.env.NODE_ENV === "production") {
+	if (!_corsEnv || _corsEnv.split(",").map((s) => s.trim()).some((o) => o === "*")) {
+		logger.error(
+			"CORS_ALLOWED is not set or includes '*'. In production this is insecure — please set CORS_ALLOWED to a comma-separated list of allowed origins.",
+		);
+		// Fallback to dev defaults to keep services running; strongly recommend setting CORS_ALLOWED in production.
+		_allowedOrigins.push(..._devDefaults.split(",").map((s) => s.trim()).filter(Boolean));
+	}
+}
+app.use(
+	cors({
+		origin: (origin, callback) => {
+			// Allow non-browser requests (e.g., server-to-server, curl) and known dev origins.
+			if (!origin) return callback(null, true);
+			if (_allowedOrigins.includes(origin)) return callback(null, true);
+			// Instead of passing an Error which leads to a 500 with no CORS headers,
+			// signal CORS rejection by passing `false`. The cors middleware will
+			// then respond with a proper 403 and include no Access-Control-Allow-* headers.
+			return callback(null, false);
+		},
+		credentials: true,
+	}),
+);
 app.use(morgan("combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
