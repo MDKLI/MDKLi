@@ -67,6 +67,15 @@
 		"zod": "^4.3.6",
 		"zustand": "^5.0.12"
 	},
+	"overrides": {
+		"socket.io-client": {
+			"socket.io-parser": "4.2.7"
+		},
+		"postcss": "8.5.23",
+		"vite": {
+			"postcss": "8.5.23"
+		}
+	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.4",
 		"@faker-js/faker": "^10.4.0",
@@ -85,7 +94,7 @@
 		"playwright": "1.59.1",
 		"prettier": "^3.8.3",
 		"typescript": "~6.0.3",
-		"vite": "^8.0.16",
+		"vite": "^8.2.0",
 		"vitest": "^4.1.10",
 		"vitest-browser-react": "^2.2.0"
 	}
