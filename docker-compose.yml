@@ -1,3 +1,20 @@
+x-mdkli-common: &mdkli-common
+  image: mdkli:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  environment:
+    QDRANT_HOST: qdrant
+    QDRANT_PORT: "6333"
+    QDRANT_URL: http://qdrant:6333
+  restart: unless-stopped
+  volumes:
+    - ./short_term_memory:/app/data
+  depends_on:
+    - qdrant
+
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -6,6 +23,7 @@ services:
     volumes:
       - ./long_term_memory:/qdrant/storage
     restart: unless-stopped
+
   chainlit:
     build:
       context: .
@@ -15,30 +33,29 @@ services:
     env_file:
       - .env
     environment:
-      - QDRANT_PORT=6333
-      - QDRANT_API_KEY=None
-      - QDRANT_HOST=localhost
-      - QDRANT_URL=http://qdrant:6333
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      QDRANT_URL: http://qdrant:6333
     restart: unless-stopped
-    volumes: 
+    volumes:
       - ./short_term_memory:/app/data
     depends_on:
       - qdrant
+
   whatsapp:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *mdkli-common
     ports:
       - "8080:8080"
-    env_file:
-      - .env
-    environment:
-      - QDRANT_PORT=6333
-      - QDRANT_API_KEY=None
-      - QDRANT_HOST=localhost
-      - QDRANT_URL=http://qdrant:6333
-    restart: unless-stopped
-    volumes: 
-      - ./short_term_memory:/app/data
-    depends_on:
-      - qdrant
+
+  api:
+    <<: *mdkli-common
+    command:
+      - /app/.venv/bin/fastapi
+      - run
+      - ai_companion/interfaces/api/main.py
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    ports:
+      - "8001:8000"
