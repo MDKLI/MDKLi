@@ -6,6 +6,135 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database Primary Service
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: authdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Automatic Database Initialization Helper (Runs once at startup)
+  postgres-init:
+    image: postgres:15-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      PGPASSWORD=postgres psql -h postgres -U postgres -c 'CREATE DATABASE searchdb;' || true;
+      PGPASSWORD=postgres psql -h postgres -U postgres -c 'CREATE DATABASE bookingdb;' || true;
+      PGPASSWORD=postgres psql -h postgres -U postgres -c 'CREATE DATABASE chatdb;' || true;
+      PGPASSWORD=postgres psql -h postgres -U postgres -c 'CREATE DATABASE admindb;' || true;
+      "
+    networks:
+      - app-network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Automatic MinIO Bucket Initialization
+  minio-create-bucket:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/mdkli-media || true;
+      /usr/bin/mc policy set public myminio/mdkli-media;
+      exit 0; "
+    networks:
+      - app-network
+
+  # Meilisearch Engine
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_HTTP_ADDR: 0.0.0.0:7700
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Backend Auth Service
   auth-service:
     image: ghcr.io/mdkli/mdkli-auth-service:67af95a
     restart: unless-stopped
@@ -35,6 +164,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       minio:
         condition: service_healthy
       rabbitmq:
@@ -42,6 +173,7 @@ services:
     networks:
       - app-network
 
+  # Search Service
   search-service:
     image: ghcr.io/mdkli/mdkli-search-service:67af95a
     restart: unless-stopped
@@ -64,6 +196,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       meilisearch:
         condition: service_healthy
       rabbitmq:
@@ -71,6 +205,7 @@ services:
     networks:
       - app-network
 
+  # Booking Service
   booking-service:
     image: ghcr.io/mdkli/mdkli-booking-service:67af95a
     restart: unless-stopped
@@ -87,11 +222,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
 
+  # Chat Service
   chat-service:
     image: ghcr.io/mdkli/mdkli-chat-service:67af95a
     restart: unless-stopped
@@ -115,6 +255,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
       minio:
@@ -122,6 +264,7 @@ services:
     networks:
       - app-network
 
+  # Admin Service
   admin-service:
     image: ghcr.io/mdkli/mdkli-admin-service:67af95a
     restart: unless-stopped
@@ -137,11 +280,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
     networks:
       - app-network
 
+  # Frontend Application
   frontend:
     image: ghcr.io/mdkli/mdkli-frontend:67af95a
     restart: unless-stopped
@@ -159,106 +305,50 @@ services:
     networks:
       - app-network
 
-  postgres:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
+  # Data Seeder
+  seeder:
+    image: ghcr.io/mdkli/mdkli-seeder:67af95a
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: authdb
+      AUTH_SERVICE_URL: http://auth-service:3000
+      BOOKING_SERVICE_URL: http://booking-service:3004
+      CHAT_SERVICE_URL: http://chat-service:3005
+      DOCTOR_COUNT: "50"
+      PHARMACY_COUNT: "50"
+      HOSPITAL_COUNT: "3"
+      CENTER_COUNT: "3"
+      PATIENT_COUNT: "20"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  minio-create-bucket:
-    image: minio/mc:latest
+      - seeder_data:/app/data
     depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set myminio http://minio:9000 minioadmin
-      minioadmin; /usr/bin/mc mb myminio/mdkli-media || true; /usr/bin/mc policy
-      set public myminio/mdkli-media; exit 0; "
+      auth-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
     networks:
       - app-network
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.6
-    restart: unless-stopped
-    ports:
-      - "7700:7700"
+  # Search Migration Task
+  migrate-search:
+    image: ghcr.io/mdkli/mdkli-search-service:67af95a
     environment:
-      MEILI_MASTER_KEY: masterKey
-      MEILI_HTTP_ADDR: 0.0.0.0:7700
-    volumes:
-      - meilisearch_data:/meili_data
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: searchdb
+      AUTH_SERVICE_URL: http://auth-service:3000
+    entrypoint: []
+    command: ["node", "dist/scripts/migrateFromAuth.js"]
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+      search-service:
+        condition: service_started
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
 networks:
   app-network:
@@ -270,6 +360,7 @@ volumes:
   meilisearch_data:
   rabbitmq_data:
   redis_data:
+  seeder_data:
 ```
 
 ## 2. Start it
@@ -278,16 +369,8 @@ volumes:
 docker compose up -d
 ```
 
-## 3. Create the other databases (one-time)
+## 3. Open it
 
-```bash
-docker compose exec postgres psql -U postgres -c "CREATE DATABASE searchdb;"
-docker compose exec postgres psql -U postgres -c "CREATE DATABASE bookingdb;"
-docker compose exec postgres psql -U postgres -c "CREATE DATABASE chatdb;"
-docker compose exec postgres psql -U postgres -c "CREATE DATABASE admindb;"
-docker compose restart search-service booking-service chat-service admin-service
 ```
-
-## 4. Open it
-
 http://localhost
+```

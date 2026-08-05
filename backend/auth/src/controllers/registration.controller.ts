@@ -272,14 +272,26 @@ export const completeRegistration = async (
 				);
 				await queryRunner.manager.save(doctorProfile);
 				logger.info("Doctor profile saved successfully");
+				logger.info(`Doctor profile id after save: ${doctorProfile.id}`);
 
 				// Create branches if provided
 				if (onboardingData.branches && onboardingData.branches.length > 0) {
-					await createBranches(queryRunner, user, onboardingData.branches);
+					const savedBranches = await createBranches(
+						queryRunner,
+						user,
+						onboardingData.branches,
+					);
+					for (const branch of savedBranches) {
+						pendingEvents.push(() => {
+							publishBranchCreated(branch.id, user.id).catch((err) => {
+								logger.error("Failed to publish branch.created event:", err);
+							});
+						});
+					}
 				}
 
 				// Publish event to RabbitMQ (after transaction commits)
-				setImmediate(() => {
+				pendingEvents.push(() => {
 					publishDoctorCreated(doctorProfile.id).catch((err) => {
 						logger.error("Failed to publish doctor created event:", err);
 					});
@@ -321,7 +333,18 @@ export const completeRegistration = async (
 
 				// Create branches if provided
 				if (onboardingData.branches && onboardingData.branches.length > 0) {
-					await createBranches(queryRunner, user, onboardingData.branches);
+					const savedBranches = await createBranches(
+						queryRunner,
+						user,
+						onboardingData.branches,
+					);
+					for (const branch of savedBranches) {
+						pendingEvents.push(() => {
+							publishBranchCreated(branch.id, user.id).catch((err) => {
+								logger.error("Failed to publish branch.created event:", err);
+							});
+						});
+					}
 				}
 
 				// Publish event to RabbitMQ (after transaction commits)
@@ -347,6 +370,13 @@ export const completeRegistration = async (
 		});
 
 		await queryRunner.commitTransaction();
+
+		// Now that the transaction has actually committed, it's safe to fire
+		// the deferred events (e.g. branch.created) — the event-publisher's
+		// separate DB connection needs to be able to see these rows.
+		for (const publish of pendingEvents) {
+			publish();
+		}
 
 		res.status(201).json({
 			message: "Registration completed successfully",

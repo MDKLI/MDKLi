@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const sharp = require("sharp");
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || "http://auth-service:3000";
 const BOOKING_URL = process.env.BOOKING_SERVICE_URL || "http://booking-service:3004";
@@ -29,8 +30,25 @@ const SPECIALTIES = [
   "cardiology","dermatology","pediatrics","orthopedics","neurology","psychiatry",
   "dentistry","general_surgery","ent","ophthalmology"
 ];
-const CITIES = ["Cairo","Giza","Alexandria","Qalyubia","Mansoura","Tanta"];
-const AREAS = ["Downtown","Nasr City","Maadi","Heliopolis","Zamalek","Sheikh Zayed"];
+// ids/areas mirror search.controller.ts's ALL_CITIES exactly — must stay in sync
+// or city/area filters will silently stop matching again.
+const CITIES_WITH_AREAS = [
+  { id: "cairo", areas: ["Nasr City","Heliopolis","New Cairo","Maadi","Mokattam","Shorouk","Badr City","El Rehab","Madinaty","Zamalek","Downtown","Garden City","Ain Shams","El Marg","El Salam","El Nozha","Abbassia","Ramses","Helwan","Dar El Salam","Basatin","Shubra"] },
+  { id: "giza", areas: ["Dokki","Mohandessin","Haram","Faisal","Sheikh Zayed","6th of October","Agouza","Imbaba","Bulaq El Dakrour","Giza Square","Hadayek Al Ahram","Kerdasa","Oseem"] },
+  { id: "alexandria", areas: ["Smouha","Sidi Gaber","Sporting","Stanley","Miami","Mandara","Agami","Borg El Arab","Gleem","Louran","Raml Station"] },
+  { id: "qalyubia", areas: ["Shubra El Kheima","Banha","Qalyub","Obour","Khanka","Toukh","Kafr Shukr"] },
+  { id: "sharqia", areas: ["Zagazig","10th of Ramadan","Belbeis","Minya El Qamh","Abu Hammad"] },
+  { id: "dakahlia", areas: ["Mansoura","Mit Ghamr","Talkha","Aga","Belqas"] },
+  { id: "gharbia", areas: ["Tanta","El Mahalla El Kubra","Kafr El Zayat","Zefta"] },
+];
+
+function pickCityAndArea(forcedCityId) {
+  const city = forcedCityId
+    ? CITIES_WITH_AREAS.find((c) => c.id === forcedCityId)
+    : rand(CITIES_WITH_AREAS);
+  const area = rand(city.areas);
+  return { cityId: city.id, area };
+}
 const AGE_BANDS = ["young", "mid", "old"];
 
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -38,45 +56,63 @@ function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 // ---------- photo loading ----------
-function loadPhotosAsDataUris(dir) {
+// Resize + re-encode before base64-embedding — the raw stock/facility
+// photos are multi-MB, which made every search response carrying them
+// (especially pharmacies) far heavier than doctor headshots. Doctor
+// photos are small to begin with but get the same treatment for
+// consistency and to cap worst-case size regardless of source file.
+async function loadPhotosAsDataUris(dir, maxWidth = 800, quality = 70) {
   if (!fs.existsSync(dir)) return [];
-  return fs
+  const files = fs
     .readdirSync(dir)
-    .filter((f) => /\.(jpe?g|png)$/i.test(f))
-    .map((f) => {
-      const ext = path.extname(f).slice(1).toLowerCase();
-      const mime = ext === "png" ? "image/png" : "image/jpeg";
-      const buf = fs.readFileSync(path.join(dir, f));
-      return `data:${mime};base64,${buf.toString("base64")}`;
-    });
-}
+    .filter((f) => /\.(jpe?g|png)$/i.test(f));
 
-const doctorPhotosByGenderAndBand = {
-  male: {
-    young: loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "young")),
-    mid:   loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "mid")),
-    old:   loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "old")),
-  },
-  female: {
-    young: loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "young")),
-    mid:   loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "mid")),
-    old:   loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "old")),
-  },
-};
-const facilityPhotos = loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "facilities"));
-
-for (const gender of ["male", "female"]) {
-  for (const band of AGE_BANDS) {
-    console.log(`Loaded ${doctorPhotosByGenderAndBand[gender][band].length} ${gender}/${band} doctor photos`);
+  const results = [];
+  for (const f of files) {
+    try {
+      const buf = await sharp(path.join(dir, f))
+        .resize({ width: maxWidth, withoutEnlargement: true })
+        .jpeg({ quality })
+        .toBuffer();
+      results.push(`data:image/jpeg;base64,${buf.toString("base64")}`);
+    } catch (err) {
+      console.warn(`  [photo-resize-failed] ${f}: ${err.message}`);
+    }
   }
+  return results;
 }
-console.log(`Loaded ${facilityPhotos.length} facility photos`);
+
+let doctorPhotosByGenderAndBand = null;
+let facilityPhotos = null;
+
+async function loadAllPhotos() {
+  doctorPhotosByGenderAndBand = {
+    male: {
+      young: await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "young")),
+      mid:   await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "mid")),
+      old:   await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "male", "old")),
+    },
+    female: {
+      young: await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "young")),
+      mid:   await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "mid")),
+      old:   await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "doctors", "female", "old")),
+    },
+  };
+  facilityPhotos = await loadPhotosAsDataUris(path.join(__dirname, "..", "photos", "facilities"));
+
+  for (const gender of ["male", "female"]) {
+    for (const band of AGE_BANDS) {
+      console.log(`Loaded ${doctorPhotosByGenderAndBand[gender][band].length} ${gender}/${band} doctor photos`);
+    }
+  }
+  console.log(`Loaded ${facilityPhotos.length} facility photos`);
+}
 
 // ---------- helpers for age/title ----------
 function titleForExperience(years) {
-  if (years >= 20) return Math.random() < 0.8 ? "prof" : "dr";
-  if (years >= 10) return Math.random() < 0.3 ? "prof" : "dr";
-  return "dr";
+  if (years >= 20) return Math.random() < 0.8 ? "professor" : "consultant";
+  if (years >= 10) return Math.random() < 0.3 ? "professor" : "specialist";
+  return "specialist";
 }
 
 function ageBandForExperience(years) {
@@ -90,6 +126,35 @@ function pickDoctorPhoto(gender, band) {
   if (pool[band].length) return rand(pool[band]);
   const fallback = AGE_BANDS.map((b) => pool[b]).find((p) => p.length);
   return fallback ? rand(fallback) : "";
+}
+
+// Weight (gender, band) selection by how many photos exist for that
+// combination, so category sizes track actual available pics instead
+// of being independently randomized.
+function pickWeightedCategory() {
+  const entries = [];
+  for (const gender of ["male", "female"]) {
+    for (const band of AGE_BANDS) {
+      const count = doctorPhotosByGenderAndBand[gender][band].length;
+      if (count > 0) entries.push({ gender, band, count });
+    }
+  }
+  const total = entries.reduce((sum, e) => sum + e.count, 0);
+  let roll = Math.random() * total;
+  for (const entry of entries) {
+    roll -= entry.count;
+    if (roll <= 0) return entry;
+  }
+  return entries[entries.length - 1];
+}
+
+// Years-of-experience range matching ageBandForExperience's thresholds
+// (young < 8, mid 8-17, old >= 18), so a doctor's generated experience
+// stays consistent with the band its photo was drawn from.
+function yearsForBand(band) {
+  if (band === "old") return randInt(18, 30);
+  if (band === "mid") return randInt(8, 17);
+  return randInt(1, 7);
 }
 
 // ---------- HTTP helper with 429 retry ----------
@@ -158,6 +223,27 @@ async function pollDoctorSynced(userId, retries = 12, intervalMs = 1500) {
   return null;
 }
 
+async function fetchMyProfile(token) {
+  const res = await req(`${AUTH_URL}/api/profile/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    console.warn(`  [profile] fetch failed: ${res.error}`);
+    return null;
+  }
+  return res.data; // { id, ...profileFields, branches: [...] }
+}
+
+async function fetchFacilityBranches(facilityId, token) {
+  const res = await req(`${AUTH_URL}/api/invitations/facility/${facilityId}/branches`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    console.warn(`  [facility-branches] fetch failed: ${res.error}`);
+    return [];
+  }
+  return res.data?.data || [];
+}
 async function pollFacilityBranchesSynced(userId, retries = 12, intervalMs = 1500) {
   for (let i = 0; i < retries; i++) {
     const res = await req(`${BOOKING_URL}/api/v1/public/facilities/${userId}/branches`);
@@ -167,17 +253,24 @@ async function pollFacilityBranchesSynced(userId, retries = 12, intervalMs = 150
   return null;
 }
 
-function makeBranch(namePrefix) {
+function makeBranch(namePrefix, mediaUrls = [], forcedCityId = null) {
+  const { cityId, area } = pickCityAndArea(forcedCityId);
   return {
     name: `${namePrefix} Branch`,
-    cityId: rand(CITIES),
-    area: rand(AREAS),
-    address: `${randInt(1, 200)} ${rand(AREAS)} St.`,
+    cityId,
+    area,
+    address: `${randInt(1, 200)} ${area} St.`,
     googleMapsUrl: "",
     phoneNumbers: [`+2010${randInt(10000000, 99999999)}`],
     consultationFee: String(randInt(150, 500)),
-    mediaUrls: [],
+    mediaUrls,
   };
+}
+
+function pickBranchPhotos(count) {
+  if (!facilityPhotos.length) return [];
+  const shuffled = [...facilityPhotos].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, facilityPhotos.length));
 }
 
 // ---------- seeding steps ----------
@@ -210,12 +303,13 @@ async function seedDoctors() {
     const yearsOfExperience = randInt(1, 30);
     const title = titleForExperience(yearsOfExperience);
     const ageBand = ageBandForExperience(yearsOfExperience);
-    const hasPrivatePractice = Math.random() < 0.7;
+    const hasPrivatePractice = i <= 10 ? true : Math.random() < 0.7;
     const email = `doctor${i}@${EMAIL_DOMAIN}`;
-    const branches = hasPrivatePractice ? [makeBranch(`Dr. ${last}`)] : [];
+    const branchMedia = i <= 10 && hasPrivatePractice ? pickBranchPhotos(randInt(1, 3)) : [];
+    const branches = hasPrivatePractice ? [makeBranch(`Dr. ${last}`, branchMedia)] : [];
 
     const onboardingData = {
-      full_name: `${title === "prof" ? "Prof." : "Dr."} ${first} ${last}`,
+      full_name: `${title === "professor" ? "Prof." : "Dr."} ${first} ${last}`,
       photo_url: pickDoctorPhoto(gender, ageBand),
       phone_number: `+2010${randInt(10000000, 99999999)}`,
       title,
@@ -230,8 +324,19 @@ async function seedDoctors() {
     const acc = await registerAccount(`doctor${i}`, email, "doctor", onboardingData);
     if (!acc) continue;
 
+    const myProfile = await fetchMyProfile(acc.token);
+    if (!myProfile) {
+      console.warn(`  [profile-missing] doctor ${i} registered but /profile/me failed, skipping invitations for this doctor`);
+    }
+
     console.log(`  doctor ${i}/${DOCTOR_COUNT} created (${email})`);
-    doctors.push({ ...acc, name: `${first} ${last}`, hasPrivatePractice, branchIds: [] });
+    doctors.push({
+      ...acc,
+      name: `${first} ${last}`,
+      hasPrivatePractice,
+      branchIds: [],
+      doctorId: myProfile?.id || null,
+    });
     await sleep(150);
   }
 
@@ -265,7 +370,8 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
   // Fix email bug: replace spaces with hyphens
   const safePrefix = labelPrefix.toLowerCase().replace(/\s+/g, '-');
   for (let i = 1; i <= count; i++) {
-    const city = rand(CITIES);
+    const cityEntry = rand(CITIES_WITH_AREAS);
+    const city = cityEntry.id;
     // Pharmacies get a plain, generic name — never "Hospital"/"Center",
     // since facility_type already carries that distinction.
     const rawName =
@@ -273,7 +379,7 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
     const name = rawName.replace(/\b(Hospital|Center|Centre)\b/gi, "").replace(/\s{2,}/g, " ").trim();
     const email = `${safePrefix}${i}@${EMAIL_DOMAIN}`;
     const branchCount = randInt(1, 3);
-    const branches = Array.from({ length: branchCount }, () => makeBranch(name));
+    const branches = Array.from({ length: branchCount }, () => makeBranch(name, [], city));
 
     const onboardingData = {
       facility_name: name,
@@ -282,7 +388,7 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
       facility_type: facilityType,
       description: `A trusted ${labelPrefix.toLowerCase()} serving the ${city} area.`,
       city,
-      address: `${randInt(1, 200)} ${rand(AREAS)} St.`,
+      address: `${randInt(1, 200)} ${rand(cityEntry.areas)} St.`,
       branches,
     };
 
@@ -290,7 +396,7 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
     if (!acc) continue;
 
     console.log(`  ${labelPrefix} ${i}/${count} created (${email})`);
-    facilities.push({ ...acc, name });
+    facilities.push({ ...acc, name, facilityType, role });
     await sleep(150);
   }
 
@@ -299,6 +405,75 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
     await pollFacilityBranchesSynced(fac.userId, 6, 1000);
   }
   return facilities;
+}
+
+async function seedFacilityInvitations(doctors, facilities) {
+  // Only hospitals/centers can invite doctors (see invitation.controller.ts)
+  const inviters = facilities.filter(
+    (f) => f.facilityType === "hospital" || f.facilityType === "center",
+  );
+  console.log(`  [invite-debug] ${inviters.length} inviter facilities, ${doctors.length} candidate doctors`);
+  if (!inviters.length || !doctors.length) {
+    console.warn(`  [invite-abort] guard triggered — inviters=${inviters.length} doctors=${doctors.length}`);
+    return;
+  }
+
+  for (const fac of inviters) {
+    console.log(`  [invite-debug] processing facility: ${fac.name} (type=${fac.facilityType})`);
+    const myProfile = await fetchMyProfile(fac.token);
+    if (!myProfile) {
+      console.warn(`  [invite-skip] ${fac.name}: could not resolve facility profile id`);
+      continue;
+    }
+    const facilityId = myProfile.id;
+
+    const branches = await fetchFacilityBranches(facilityId, fac.token);
+    if (!branches.length) {
+      console.warn(`  [invite-skip] ${fac.name}: no branches found`);
+      continue;
+    }
+
+    const pickCount = randInt(1, 3);
+    const shuffledDoctors = [...doctors].sort(() => Math.random() - 0.5);
+    const invitedDoctors = shuffledDoctors
+      .filter((d) => d.doctorId)
+      .slice(0, pickCount);
+
+    for (const doc of invitedDoctors) {
+      const invite = await req(`${AUTH_URL}/api/invitations`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${fac.token}` },
+        body: JSON.stringify({
+          doctorId: doc.doctorId,
+          facilityId,
+          branches: branches.map((b) => ({
+            branchId: b.id,
+            consultationFee: randInt(150, 500),
+          })),
+          message: `Join us at ${fac.name}`,
+        }),
+      });
+
+      if (!invite.ok) {
+        console.warn(`  [invite-failed] ${fac.name} -> Dr. ${doc.name}: ${invite.error}`);
+        continue;
+      }
+
+      const invitationId = invite.data.invitationId;
+      const accept = await req(`${AUTH_URL}/api/invitations/${invitationId}/accept`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${doc.token}` },
+      });
+
+      if (!accept.ok) {
+        console.warn(`  [accept-failed] Dr. ${doc.name} -> ${fac.name}: ${accept.error}`);
+        continue;
+      }
+
+      console.log(`  invited + accepted: Dr. ${doc.name} -> ${fac.name}`);
+      await sleep(150);
+    }
+  }
 }
 
 async function seedBookingsAndChats(doctors, patients) {
@@ -340,6 +515,8 @@ async function seedBookingsAndChats(doctors, patients) {
 }
 
 async function main() {
+  await loadAllPhotos();
+
   console.log("== Seeding patients ==");
   const patients = await seedPatients();
 
@@ -350,10 +527,13 @@ async function main() {
   await seedFacilities(PHARMACY_COUNT, "pharmacy_admin", "pharmacy", "Pharmacy");
 
   console.log("== Seeding hospitals ==");
-  await seedFacilities(HOSPITAL_COUNT, "clinic_admin", "hospital", "Hospital");
+  const hospitals = await seedFacilities(HOSPITAL_COUNT, "clinic_admin", "hospital", "Hospital");
 
   console.log("== Seeding medical centers ==");
-  await seedFacilities(CENTER_COUNT, "clinic_admin", "center", "Medical Center");
+  const centers = await seedFacilities(CENTER_COUNT, "clinic_admin", "center", "Medical Center");
+
+  console.log("== Seeding hospital/center doctor invitations ==");
+  await seedFacilityInvitations(doctors, [...hospitals, ...centers]);
 
   console.log("== Seeding sample bookings + chat rooms ==");
   await seedBookingsAndChats(doctors, patients);
@@ -361,7 +541,20 @@ async function main() {
   console.log("== Done ==");
 }
 
-main().catch((err) => {
-  console.error("Seeder crashed:", err);
-  process.exit(1);
-});
+const MARKER_PATH = "/app/data/.seeded";
+
+if (fs.existsSync(MARKER_PATH)) {
+  console.log("Marker found at /app/data/.seeded — already seeded, skipping.");
+  process.exit(0);
+}
+
+main()
+  .then(() => {
+    fs.mkdirSync(path.dirname(MARKER_PATH), { recursive: true });
+    fs.writeFileSync(MARKER_PATH, new Date().toISOString());
+    console.log("Wrote seed marker.");
+  })
+  .catch((err) => {
+    console.error("Seeder crashed:", err);
+    process.exit(1);
+  });
