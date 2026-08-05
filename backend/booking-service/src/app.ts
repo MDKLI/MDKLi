@@ -28,9 +28,32 @@ const app = express();
 app.set("trust proxy", 1);
 // Security middleware
 app.use(helmet());
+// Configure CORS from CORS_ALLOWED env var (comma-separated list).
+// In production CORS_ALLOWED must be explicitly set and must NOT include '*'.
+const _corsEnv = process.env.CORS_ALLOWED;
+const _devDefaults = "http://localhost:5173,http://localhost:3000";
+const _allowedOrigins = (
+	_corsEnv || (process.env.NODE_ENV === "production" ? "" : _devDefaults)
+)
+	.split(",")
+	.map((s) => s.trim())
+	.filter(Boolean);
+if (process.env.NODE_ENV === "production") {
+	if (!_corsEnv || _corsEnv.split(",").map((s) => s.trim()).some((o) => o === "*")) {
+		logger.error(
+			"CORS_ALLOWED is not set or includes '*'. In production this is insecure — please set CORS_ALLOWED to a comma-separated list of allowed origins.",
+		);
+		// Fallback to dev defaults to keep services running; strongly recommend setting CORS_ALLOWED in production.
+		_allowedOrigins.push(..._devDefaults.split(",").map((s) => s.trim()).filter(Boolean));
+	}
+}
 app.use(
 	cors({
-		origin: process.env.CORS_ORIGIN || "*",
+		origin: (origin, callback) => {
+			if (!origin) return callback(null, true);
+			if (_allowedOrigins.includes(origin)) return callback(null, true);
+			return callback(new Error("Not allowed by CORS"));
+		},
 		credentials: true,
 	}),
 );
