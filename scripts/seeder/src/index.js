@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const sharp = require("sharp");
 
 const AUTH_URL = process.env.AUTH_SERVICE_URL || "http://auth-service:3000";
@@ -51,9 +52,19 @@ function pickCityAndArea(forcedCityId) {
 }
 const AGE_BANDS = ["young", "mid", "old"];
 
-function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function rand(arr) { return arr[crypto.randomInt(arr.length)]; }
+function randInt(min, max) { return crypto.randomInt(min, max + 1); }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// Secure shuffle using Fisher-Yates with crypto.randomInt
+function secureShuffle(array) {
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // ---------- photo loading ----------
 // Resize + re-encode before base64-embedding — the raw stock/facility
@@ -110,8 +121,8 @@ async function loadAllPhotos() {
 
 // ---------- helpers for age/title ----------
 function titleForExperience(years) {
-  if (years >= 20) return Math.random() < 0.8 ? "professor" : "consultant";
-  if (years >= 10) return Math.random() < 0.3 ? "professor" : "specialist";
+  if (years >= 20) return crypto.randomInt(100) < 80 ? "professor" : "consultant";
+  if (years >= 10) return crypto.randomInt(100) < 30 ? "professor" : "specialist";
   return "specialist";
 }
 
@@ -140,10 +151,11 @@ function pickWeightedCategory() {
     }
   }
   const total = entries.reduce((sum, e) => sum + e.count, 0);
-  let roll = Math.random() * total;
+  // Secure roll in [0, total-1]
+  let roll = crypto.randomInt(total);
   for (const entry of entries) {
     roll -= entry.count;
-    if (roll <= 0) return entry;
+    if (roll < 0) return entry;
   }
   return entries[entries.length - 1];
 }
@@ -269,7 +281,7 @@ function makeBranch(namePrefix, mediaUrls = [], forcedCityId = null) {
 
 function pickBranchPhotos(count) {
   if (!facilityPhotos.length) return [];
-  const shuffled = [...facilityPhotos].sort(() => Math.random() - 0.5);
+  const shuffled = secureShuffle([...facilityPhotos]);
   return shuffled.slice(0, Math.min(count, facilityPhotos.length));
 }
 
@@ -303,7 +315,7 @@ async function seedDoctors() {
     const yearsOfExperience = randInt(1, 30);
     const title = titleForExperience(yearsOfExperience);
     const ageBand = ageBandForExperience(yearsOfExperience);
-    const hasPrivatePractice = i <= 10 ? true : Math.random() < 0.7;
+    const hasPrivatePractice = i <= 10 ? true : crypto.randomInt(100) < 70;
     const email = `doctor${i}@${EMAIL_DOMAIN}`;
     const branchMedia = i <= 10 && hasPrivatePractice ? pickBranchPhotos(randInt(1, 3)) : [];
     const branches = hasPrivatePractice ? [makeBranch(`Dr. ${last}`, branchMedia)] : [];
@@ -434,7 +446,7 @@ async function seedFacilityInvitations(doctors, facilities) {
     }
 
     const pickCount = randInt(1, 3);
-    const shuffledDoctors = [...doctors].sort(() => Math.random() - 0.5);
+    const shuffledDoctors = secureShuffle([...doctors]);
     const invitedDoctors = shuffledDoctors
       .filter((d) => d.doctorId)
       .slice(0, pickCount);
