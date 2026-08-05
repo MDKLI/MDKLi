@@ -10,7 +10,6 @@ import {
 } from "@/lib/chat-socket";
 import { useAuthStore } from "@/stores/auth-store";
 import { useChatStore } from "@/stores/chat-store";
-import { isNonPharmacyFacilityAdmin } from "@/lib/facility";
 import {
 	getDoctorSidebarItems,
 	getFacilitySidebarItems,

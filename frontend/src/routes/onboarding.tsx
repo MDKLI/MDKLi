@@ -1332,7 +1332,7 @@ function FacilityInfoStep({ onNext }: { onNext: () => void }) {
 	const form = useForm({
 		resolver: zodResolver(facilityInfoSchema),
 		defaultValues: {
-			facilityType: allowedFacilityTypes[0]?.id ?? "hospital",
+			facilityType: (allowedFacilityTypes[0]?.id ?? "hospital") as "center" | "hospital" | "pharmacy",
 			bio: "",
 		},
 	});
