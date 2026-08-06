@@ -1,39 +1,35 @@
-# Use an appropriate base image
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# Install the project into `/app`
 WORKDIR /app
 
-# Set environment variables (e.g., set Python to run in unbuffered mode)
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1 \
+    UV_HTTP_TIMEOUT=300 \
+    UV_HTTP_CONNECT_TIMEOUT=60 \
+    UV_HTTP_RETRIES=5 \
+    UV_LINK_MODE=copy
 
-# Install system dependencies for building libraries
 RUN apt-get update && apt-get install -y \
     build-essential \
     g++ \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the dependency management files (lock file and pyproject.toml) first
 COPY uv.lock pyproject.toml README.md /app/
 
-# Install the application dependencies
-RUN uv sync --frozen --no-cache
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
-# Copy your application code into the container
 COPY src/ /app/
 
-# Set the virtual environment environment variables
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
-# Install the package in editable mode
-RUN uv pip install -e .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install -e .
 
-# Define volumes
 VOLUME ["/app/data"]
 
-# Expose the port
-EXPOSE 8080
+EXPOSE 8000 8080
 
 # Run the FastAPI app using uvicorn
 CMD ["/app/.venv/bin/fastapi", "run", "ai_companion/interfaces/whatsapp/webhook_endpoint.py", "--port", "8080", "--host", "0.0.0.0"]

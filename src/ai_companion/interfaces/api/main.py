@@ -4,15 +4,36 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 
-# Points to D:\mdkli\mdkli (4 folders up from /interfaces/api/main.py)
-root_dir = Path(__file__).resolve().parents[4]
+def find_project_root() -> Path:
+    candidates = [
+        Path.cwd(),
+        *Path(__file__).resolve().parents,
+    ]
+
+    for candidate in candidates:
+        if (candidate / "pyproject.toml").exists():
+            return candidate
+
+    return Path.cwd()
+
+
+root_dir = find_project_root()
 env_path = root_dir / ".env"
 
 if env_path.exists():
-    load_dotenv(dotenv_path=env_path)
-else:
-    print(f"⚠️ Warning: .env file not found at {env_path}")
+    load_dotenv(env_path)
+
+# Points to D:\mdkli\mdkli (4 folders up from /interfaces/api/main.py)
+# root_dir = Path(__file__).resolve().parents[4]
+# env_path = root_dir / ".env"
+
+# if env_path.exists():
+#     load_dotenv(dotenv_path=env_path)
+# else:
+#     print(f"⚠️ Warning: .env file not found at {env_path}")
 
 # =====================================================================
 # STEP 2: Standard Python & FastAPI imports
@@ -89,6 +110,14 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+
+FRONTEND_DIR = Path(__file__).resolve().parent / "multi-chat-frontend"
+
+app.mount(
+    "/",
+    StaticFiles(directory=str(FRONTEND_DIR), html=True),
+    name="frontend",
+)
 
 if __name__ == "__main__":
     import uvicorn

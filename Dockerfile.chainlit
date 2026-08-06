@@ -5,8 +5,11 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # Set environment variables (e.g., set Python to run in unbuffered mode)
-ENV PYTHONUNBUFFERED 1
-
+# ENV PYTHONUNBUFFERED 1
+ENV UV_HTTP_TIMEOUT=300 \
+    UV_HTTP_CONNECT_TIMEOUT=60 \
+    UV_HTTP_RETRIES=5 \
+    UV_LINK_MODE=copy
 # Install system dependencies for building libraries
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -17,7 +20,8 @@ RUN apt-get update && apt-get install -y \
 COPY uv.lock pyproject.toml README.md /app/
 
 # Install the application dependencies
-RUN uv sync --frozen --no-cache
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
 # Copy your application code into the container
 COPY src/ /app/

@@ -35,27 +35,61 @@ services:
     environment:
       QDRANT_HOST: qdrant
       QDRANT_PORT: "6333"
+      QDRANT_API_KEY: "None"
       QDRANT_URL: http://qdrant:6333
-    restart: unless-stopped
     volumes:
+      - ./src/ai_companion:/app/ai_companion
       - ./short_term_memory:/app/data
     depends_on:
       - qdrant
-
-  whatsapp:
-    <<: *mdkli-common
-    ports:
-      - "8080:8080"
+    restart: unless-stopped
 
   api:
-    <<: *mdkli-common
+    image: mdkli:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     command:
-      - /app/.venv/bin/fastapi
-      - run
-      - ai_companion/interfaces/api/main.py
+      - /app/.venv/bin/uvicorn
+      - ai_companion.interfaces.api.main:app
       - --host
       - 0.0.0.0
       - --port
       - "8000"
+      - --reload
     ports:
       - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      QDRANT_URL: http://qdrant:6333
+    volumes:
+      - ./src/ai_companion:/app/ai_companion
+      - ./short_term_memory:/app/data
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  whatsapp:
+    profiles:
+      - whatsapp
+    image: mdkli:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      QDRANT_API_KEY: "None"
+      QDRANT_URL: http://qdrant:6333
+    volumes:
+      - ./short_term_memory:/app/data
+    depends_on:
+      - qdrant
+    restart: unless-stopped
