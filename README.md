@@ -136,7 +136,7 @@ services:
 
   # Backend Auth Service
   auth-service:
-    image: ghcr.io/mdkli/mdkli-auth-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-auth-service:9c06787
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -175,7 +175,7 @@ services:
 
   # Search Service
   search-service:
-    image: ghcr.io/mdkli/mdkli-search-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-search-service:9c06787
     restart: unless-stopped
     ports:
       - "3001:3001"
@@ -207,7 +207,7 @@ services:
 
   # Booking Service
   booking-service:
-    image: ghcr.io/mdkli/mdkli-booking-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-booking-service:9c06787
     restart: unless-stopped
     ports:
       - "3004:3004"
@@ -233,7 +233,7 @@ services:
 
   # Chat Service
   chat-service:
-    image: ghcr.io/mdkli/mdkli-chat-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-chat-service:9c06787
     restart: unless-stopped
     ports:
       - "3005:3005"
@@ -266,7 +266,7 @@ services:
 
   # Admin Service
   admin-service:
-    image: ghcr.io/mdkli/mdkli-admin-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-admin-service:9c06787
     restart: unless-stopped
     ports:
       - "3006:3006"
@@ -289,7 +289,7 @@ services:
 
   # Frontend Application
   frontend:
-    image: ghcr.io/mdkli/mdkli-frontend:b16c7de
+    image: ghcr.io/mdkli/mdkli-frontend:9c06787
     restart: unless-stopped
     ports:
       - "80:4173"
@@ -307,7 +307,7 @@ services:
 
   # Data Seeder
   seeder:
-    image: ghcr.io/mdkli/mdkli-seeder:b16c7de
+    image: ghcr.io/mdkli/mdkli-seeder:9c06787
     environment:
       AUTH_SERVICE_URL: http://auth-service:3000
       BOOKING_SERVICE_URL: http://booking-service:3004
@@ -331,7 +331,7 @@ services:
 
   # Search Migration Task
   migrate-search:
-    image: ghcr.io/mdkli/mdkli-search-service:b16c7de
+    image: ghcr.io/mdkli/mdkli-search-service:9c06787
     environment:
       NODE_ENV: production
       DB_HOST: postgres
