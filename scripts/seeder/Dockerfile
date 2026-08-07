@@ -17,7 +17,8 @@ FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432
 WORKDIR /app
 
 RUN apk update && apk add --no-cache openssl=3.5.7-r0 \
-  && addgroup -S appgroup && adduser -S appuser -G appgroup
+  && addgroup -S appgroup && adduser -S appuser -G appgroup \
+  && npm install -g https://registry.npmjs.org/npm/-/npm-12.0.2.tgz#integrity=sha512-uIXokLlBj6FpNUTQX1PmT5pz7BlIN9QlixX+zdaSNHsd0qUXsbDLr50xzY6Sw7cJVr0uzHKDOle0swmPW/p5Qw==
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
