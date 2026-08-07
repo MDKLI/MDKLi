@@ -18,7 +18,7 @@ WORKDIR /app
 
 RUN apk update && apk add --no-cache openssl=3.5.7-r0 \
   && addgroup -S appgroup && adduser -S appuser -G appgroup \
-  && npm install -g https://registry.npmjs.org/npm/-/npm-12.0.2.tgz#integrity=sha512-uIXokLlBj6FpNUTQX1PmT5pz7BlIN9QlixX+zdaSNHsd0qUXsbDLr50xzY6Sw7cJVr0uzHKDOle0swmPW/p5Qw==
+  && npm install -g npm@12.0.2
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
