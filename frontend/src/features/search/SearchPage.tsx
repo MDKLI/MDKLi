@@ -571,9 +571,8 @@ export function SearchPage() {
 }
 
 function DoctorCard({ doctor }: { doctor: Doctor }) {
-	// Create URL-safe username from full_name
-	const username =
-		doctor.full_name?.toLowerCase().replace(/\s+/g, "-") || doctor.id;
+	// Use stable id in route param to avoid collisions when multiple doctors share the same name.
+	const username = doctor.id;
 
 	// Get first branch location
 	const firstBranch = doctor.branches?.[0];

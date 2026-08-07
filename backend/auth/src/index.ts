@@ -22,7 +22,7 @@ const BOOKING_SERVICE_URL =
 // Configure CORS from environment variable CORS_ALLOWED (comma-separated list).
 // In production CORS_ALLOWED must be explicitly set and must NOT include '*'.
 const _corsEnv = process.env.CORS_ALLOWED;
-const _devDefaults = "http://localhost:5173,http://localhost:3000";
+const _devDefaults = "http://localhost:5173,http://localhost:3000,http://localhost";
 const _allowedOrigins = (
 	_corsEnv || (process.env.NODE_ENV === "production" ? "" : _devDefaults)
 )
@@ -42,8 +42,9 @@ app.use(
 	cors({
 		origin: (origin, callback) => {
 			if (!origin) return callback(null, true);
-			if (_allowedOrigins.includes(origin)) return callback(null, true);
-			return callback(new Error("Not allowed by CORS"));
+      if (_allowedOrigins.includes(origin)) return callback(null, true);
+			logger.warn(`CORS rejected origin: ${origin}`);
+			return callback(null, false);
 		},
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],

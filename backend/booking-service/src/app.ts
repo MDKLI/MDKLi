@@ -31,7 +31,7 @@ app.use(helmet());
 // Configure CORS from CORS_ALLOWED env var (comma-separated list).
 // In production CORS_ALLOWED must be explicitly set and must NOT include '*'.
 const _corsEnv = process.env.CORS_ALLOWED;
-const _devDefaults = "http://localhost:5173,http://localhost:3000";
+const _devDefaults = "http://localhost:5173,http://localhost:3000,http://localhost";
 const _allowedOrigins = (
 	_corsEnv || (process.env.NODE_ENV === "production" ? "" : _devDefaults)
 )
@@ -49,10 +49,11 @@ if (process.env.NODE_ENV === "production") {
 }
 app.use(
 	cors({
-		origin: (origin, callback) => {
+    origin: (origin, callback) => {
 			if (!origin) return callback(null, true);
 			if (_allowedOrigins.includes(origin)) return callback(null, true);
-			return callback(new Error("Not allowed by CORS"));
+			logger.warn(`CORS rejected origin: ${origin}`);
+			return callback(null, false);
 		},
 		credentials: true,
 	}),

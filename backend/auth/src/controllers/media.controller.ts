@@ -190,9 +190,12 @@ export const deleteBranchMedia = async (
 		}
 
 		// Remove media URL from branch
-		if (branch.media_urls) {
+    if (branch.media_urls) {
 			branch.media_urls = branch.media_urls.filter((url) => url !== mediaUrl);
 			await branchRepo.save(branch);
+      publishBranchUpdated(branch.id, user.id).catch((err) => {
+        logger.error("Failed to publish branch.updated after media upload:", err);
+      });
 		}
 
 		// Delete from MinIO

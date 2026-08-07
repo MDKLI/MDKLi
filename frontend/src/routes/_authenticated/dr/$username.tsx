@@ -119,7 +119,7 @@ const fetchBranchesFromBooking = useCallback(async (doctorId: string) => {
 			);
 			if (found) {
 				setDoctor({ ...found, username });
-				await fetchBranchesFromBooking(String(found.user_id));
+				await fetchBranchesFromBooking(String(found.user_id || found.id));
 			} else {
 				toast.error("Doctor not found");
 			}
