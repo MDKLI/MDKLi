@@ -12,6 +12,9 @@ const PHARMACY_COUNT = parseInt(process.env.PHARMACY_COUNT || "50", 10);
 const HOSPITAL_COUNT = parseInt(process.env.HOSPITAL_COUNT || "3", 10);
 const CENTER_COUNT = parseInt(process.env.CENTER_COUNT || "3", 10);
 const PATIENT_COUNT = parseInt(process.env.PATIENT_COUNT || "20", 10);
+const DOCTOR_PRIVATE_PRACTICE_RATE = parseInt(process.env.DOCTOR_PRIVATE_PRACTICE_RATE || "100", 10);
+const SERVICE_WAIT_RETRIES = parseInt(process.env.SERVICE_WAIT_RETRIES || "120", 10);
+const SERVICE_WAIT_INTERVAL_MS = parseInt(process.env.SERVICE_WAIT_INTERVAL_MS || "2000", 10);
 
 const PASSWORD = "useruser";
 const EMAIL_DOMAIN = "user.user";
@@ -55,6 +58,21 @@ const AGE_BANDS = ["young", "mid", "old"];
 function rand(arr) { return arr[crypto.randomInt(arr.length)]; }
 function randInt(min, max) { return crypto.randomInt(min, max + 1); }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+async function waitForService(name, url, retries = SERVICE_WAIT_RETRIES, intervalMs = SERVICE_WAIT_INTERVAL_MS) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await req(url, {}, 0);
+    if (res.ok) {
+      console.log(`  [ready] ${name} is healthy`);
+      return true;
+    }
+    if (attempt % 10 === 0) {
+      console.log(`  [waiting] ${name} (${attempt}/${retries}) ...`);
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error(`${name} did not become ready: ${url}`);
+}
 
 // Secure shuffle using Fisher-Yates with crypto.randomInt
 function secureShuffle(array) {
@@ -235,6 +253,33 @@ async function pollDoctorSynced(userId, retries = 12, intervalMs = 1500) {
   return null;
 }
 
+async function setBranchAvailabilityWithRetry(branchId, doctorUserId, doctorName, retries = 8) {
+  const rules = [1, 2, 3, 4, 5].map((dayOfWeek) => ({
+    dayOfWeek,
+    startTime: "09:00",
+    endTime: "17:00",
+    slotDurationMinutes: 30,
+  }));
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const availability = await req(`${BOOKING_URL}/api/v1/doctor/branches/${branchId}/availability`, {
+      method: "PUT",
+      body: JSON.stringify({
+        doctorId: doctorUserId,
+        rules,
+      }),
+    });
+
+    if (availability.ok) return;
+
+    if (attempt === retries) {
+      throw new Error(`Failed to set availability for Dr. ${doctorName} on branch ${branchId}: ${availability.error}`);
+    }
+
+    await sleep(Math.min(5000, 400 * attempt));
+  }
+}
+
 async function fetchMyProfile(token) {
   const res = await req(`${AUTH_URL}/api/profile/me`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -303,6 +348,9 @@ async function seedPatients() {
     }
     await sleep(100);
   }
+  if (patients.length !== PATIENT_COUNT) {
+    throw new Error(`Expected ${PATIENT_COUNT} patients, created ${patients.length}`);
+  }
   return patients;
 }
 
@@ -315,9 +363,11 @@ async function seedDoctors() {
     const yearsOfExperience = randInt(1, 30);
     const title = titleForExperience(yearsOfExperience);
     const ageBand = ageBandForExperience(yearsOfExperience);
-    const hasPrivatePractice = i <= 10 ? true : crypto.randomInt(100) < 70;
+    // Default to 100% so all seeded doctors have branches + availability unless explicitly lowered.
+    const hasPrivatePractice =
+      i <= 10 ? true : crypto.randomInt(100) < Math.max(0, Math.min(100, DOCTOR_PRIVATE_PRACTICE_RATE));
     const email = `doctor${i}@${EMAIL_DOMAIN}`;
-    const branchMedia = i <= 10 && hasPrivatePractice ? pickBranchPhotos(randInt(1, 3)) : [];
+    const branchMedia = hasPrivatePractice ? pickBranchPhotos(randInt(1, 3)) : [];
     const branches = hasPrivatePractice ? [makeBranch(`Dr. ${last}`, branchMedia)] : [];
 
     const onboardingData = {
@@ -353,26 +403,23 @@ async function seedDoctors() {
   }
 
   // sync + availability for private-practice doctors
+  // Give RabbitMQ sync a short drain window before availability writes.
+  await sleep(4000);
+
   for (const doc of doctors.filter((d) => d.hasPrivatePractice)) {
     const synced = await pollDoctorSynced(doc.userId);
     if (!synced || !synced.branches?.length) {
-      console.warn(`  [sync-timeout] doctor ${doc.name} branches never synced, skipping availability/bookings`);
-      continue;
+      throw new Error(`[sync-timeout] doctor ${doc.name} branches never synced`);
     }
     doc.branchIds = synced.branches.map((b) => b.id);
     for (const branchId of doc.branchIds) {
-      await req(`${BOOKING_URL}/api/v1/doctor/branches/${branchId}/availability`, {
-        method: "PUT",
-        body: JSON.stringify({
-          doctorId: doc.userId,
-          rules: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
-            dayOfWeek, startTime: "09:00", endTime: "17:00", slotDurationMinutes: 30,
-          })),
-        }),
-      });
+      await setBranchAvailabilityWithRetry(branchId, doc.userId, doc.name);
     }
     console.log(`  availability set for Dr. ${doc.name}`);
     await sleep(150);
+  }
+  if (doctors.length !== DOCTOR_COUNT) {
+    throw new Error(`Expected ${DOCTOR_COUNT} doctors, created ${doctors.length}`);
   }
   return doctors;
 }
@@ -391,7 +438,7 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
     const name = rawName.replace(/\b(Hospital|Center|Centre)\b/gi, "").replace(/\s{2,}/g, " ").trim();
     const email = `${safePrefix}${i}@${EMAIL_DOMAIN}`;
     const branchCount = randInt(1, 3);
-    const branches = Array.from({ length: branchCount }, () => makeBranch(name, [], city));
+    const branches = Array.from({ length: branchCount }, () => makeBranch(name, pickBranchPhotos(randInt(1, 3)), city));
 
     const onboardingData = {
       facility_name: name,
@@ -415,6 +462,9 @@ async function seedFacilities(count, role, facilityType, labelPrefix) {
   // confirm sync (best effort)
   for (const fac of facilities) {
     await pollFacilityBranchesSynced(fac.userId, 6, 1000);
+  }
+  if (facilities.length !== count) {
+    throw new Error(`Expected ${count} ${labelPrefix} records, created ${facilities.length}`);
   }
   return facilities;
 }
@@ -527,6 +577,11 @@ async function seedBookingsAndChats(doctors, patients) {
 }
 
 async function main() {
+  console.log("== Waiting for service readiness ==");
+  await waitForService("auth-service", `${AUTH_URL}/health`);
+  await waitForService("booking-service", `${BOOKING_URL}/health`);
+  await waitForService("chat-service", `${CHAT_URL}/health`);
+
   await loadAllPhotos();
 
   console.log("== Seeding patients ==");

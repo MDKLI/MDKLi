@@ -32,22 +32,25 @@ export const MEDIA_TYPE_LIMITS: Record<string, number> = {
 export class MediaService {
 	static async initializeBucket() {
 		try {
-			const exists = await minioClient.bucketExists(bucketName);
+    const exists = await minioClient.bucketExists(bucketName);
 			if (!exists) {
 				await minioClient.makeBucket(bucketName);
-				const policy = {
-					Version: "2012-10-17",
-					Statement: [
-						{
-							Effect: "Allow",
-							Principal: "*",
-							Action: ["s3:GetObject"],
-							Resource: [`arn:aws:s3:::${bucketName}/*`],
-						},
-					],
-				};
-				await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
 			}
+			// Always (re)apply the public-read policy, even if the bucket
+			// already existed — bucket creation and policy state can drift
+			// independently across restarts.
+			const policy = {
+				Version: "2012-10-17",
+				Statement: [
+					{
+						Effect: "Allow",
+						Principal: "*",
+						Action: ["s3:GetObject"],
+						Resource: [`arn:aws:s3:::${bucketName}/*`],
+					},
+				],
+			};
+			await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
 		} catch (error) {
 			console.error("Error initializing MinIO bucket:", error);
 		}

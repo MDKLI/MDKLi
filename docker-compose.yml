@@ -274,11 +274,11 @@ services:
       - seeder_data:/app/data
     depends_on:
       auth-service:
-        condition: service_started
+        condition: service_healthy
       booking-service:
-        condition: service_started
+        condition: service_healthy
       chat-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
 
